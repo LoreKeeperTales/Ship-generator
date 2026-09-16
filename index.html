@@ -1,160 +1,538 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ellond Ship Generator</title>
 <style>
 :root{
-  --bg:#071522;
-  --panel:#0d2235;
-  --card:#132d43;
-  --border:#9b7735;
-  --text:#f4ecd8;
-  --muted:#b8c2c9;
-  --accent:#c59a47;
-  --gold-light:#e0bd70;
-  --gold-dark:#76551f;
-  --navy-light:#183b56;
-  --bar:#c59a47;
+ --bg:#071522;--panel:#0d2235;--card:#132d43;--border:#9b7735;
+ --text:#f4ecd8;--muted:#b8c2c9;--gold:#c59a47;--gold2:#e0bd70;--dark:#06101a;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif}
-main{max-width:1200px;margin:auto;padding:24px}
-h1,h2,h3,p{margin-top:0}
-h1,h2,h3{color:var(--gold-light)}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(197,154,71,.025),transparent 35%,rgba(197,154,71,.018));}
-button{cursor:pointer;color:var(--text);background:#102a40;border:1px solid var(--accent);border-radius:7px;padding:9px 13px;font-weight:bold}
-button:hover{background:#183b56;border-color:var(--gold-light)}
-.primary{background:linear-gradient(180deg,#c59a47,#8a6529);border-color:#e0bd70;color:#071522;padding:13px 22px;font-size:16px}
-.grid{display:grid;gap:14px}.hero{grid-template-columns:1.2fr .8fr;align-items:stretch}
-.panel{border:1px solid var(--border);border-radius:10px;background:var(--panel);padding:16px;box-shadow:inset 0 0 0 1px rgba(224,189,112,.08)}
-.art{min-height:240px;border:2px dashed var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted)}
-.art.small{min-height:120px}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
-.stat{background:var(--card);border:1px solid #80652f;border-radius:8px;padding:9px}
-.label{text-align:center;font-size:11px;color:var(--muted);font-family:Arial,sans-serif;font-weight:bold;letter-spacing:.04em}
-.tracker{display:grid;grid-template-columns:38px 1fr 38px;gap:5px;align-items:center;margin-top:6px}
-.tracker button{height:38px;padding:0;font-size:20px;background:#0a1d2e;border-color:#b58b3e;color:#e0bd70}
-.value{text-align:center;font-family:Arial,sans-serif;font-weight:bold}
-.bar{height:6px;background:#06101a;border-radius:10px;overflow:hidden;margin-top:7px}.fill{height:100%;background:var(--bar)}
-.component{display:grid;grid-template-columns:180px 1fr;gap:14px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-.slotgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px}th,td{padding:9px;border-bottom:1px solid var(--border);text-align:left}th:last-child,td:last-child{text-align:right}
-.muted{color:var(--muted);font-size:14px}
-.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-@media(max-width:800px){.hero,.component{grid-template-columns:1fr}.dashboard{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr 1fr}.slotgrid{grid-template-columns:repeat(2,1fr)}}
+body{margin:0;background:radial-gradient(circle at 50% 0,#10283b 0,#071522 48%);color:var(--text);font-family:Georgia,"Times New Roman",serif}
+main{max-width:1400px;margin:auto;padding:22px}
+h1,h2,h3{color:var(--gold2);margin-top:0}
+button,select{font:inherit}
+button{cursor:pointer;background:#102a40;color:var(--text);border:1px solid var(--gold);border-radius:8px;padding:9px 13px;font-weight:700}
+button:hover{border-color:var(--gold2);background:#183b56}
+.primary{background:linear-gradient(#d2a64e,#8d6728);color:#071522;border-color:var(--gold2);font-size:17px;padding:13px 20px}
+.panel{background:linear-gradient(135deg,#10283c,#0c2031);border:1px solid var(--border);border-radius:12px;padding:16px}
+.hero{display:grid;grid-template-columns:1.35fr .9fr;gap:16px}
+.art{min-height:310px;border:2px dashed var(--gold);border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.art img{width:100%;height:100%;object-fit:contain;display:none}
+.art.small{min-height:130px}
+.muted{color:var(--muted)}
+.actions,.topline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.topline{justify-content:space-between}
+.dashboard{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid #80652f;border-radius:9px;padding:10px}
+.label{text-align:center;color:var(--muted);font:700 11px Arial,sans-serif;letter-spacing:.06em}
+.tracker{display:grid;grid-template-columns:40px 1fr 40px;gap:6px;align-items:center;margin-top:7px}
+.tracker button{height:38px;padding:0;font-size:20px;color:var(--gold2)}
+.value{text-align:center;font:700 14px Arial,sans-serif}
+.bar{height:6px;background:var(--dark);border-radius:20px;overflow:hidden;margin-top:7px}
+.fill{height:100%;background:var(--gold)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.component{display:grid;grid-template-columns:190px 1fr;gap:14px}
+.slotgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.slot{text-align:center}
+.slot b{font-size:24px}
+.condition{line-height:1.6}
+table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif}
+th,td{padding:9px;border-bottom:1px solid #76551f;text-align:left}
+th:last-child,td:last-child{text-align:right}
+section{margin-top:14px}
+.hero{margin-top:0}
+.badge{display:inline-block;border:1px solid var(--gold);border-radius:20px;padding:4px 9px;color:var(--gold2);font:700 12px Arial,sans-serif}
+@media(max-width:950px){.hero,.grid2,.component{grid-template-columns:1fr}.dashboard{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){main{padding:10px}.dashboard,.grid3,.slotgrid{grid-template-columns:1fr}.art{min-height:220px}}
 </style>
 </head>
 <body>
 <main>
-<section class="grid hero">
- <div class="art"><div><h2>SHIP ART</h2><div id="artPath">images/ships/...</div><p>Your ship drawing will appear here.</p></div></div>
+<section class="hero">
+ <div class="art" id="shipArt">
+   <img id="shipImage" alt="Generated ship">
+   <div id="shipArtFallback"><h2>SHIP ART</h2><div class="muted" id="artPath">images/ships/...</div><p>Your ship drawing will appear here.</p></div>
+ </div>
  <div class="panel">
-  <div class="muted">GENERATED VESSEL</div><h1 id="shipName">—</h1><p id="shipDesc" class="muted">—</p>
-  <div class="actions"><button id="generate" class="primary">Generate New Ship</button><button id="rerollName">Reroll Name</button><button id="resetBattle">Reset Battle Values</button></div>
+   <div class="muted">GENERATED VESSEL</div>
+   <h1 id="shipName">—</h1>
+   <p id="shipDesc" class="muted">—</p>
+   <p><span class="badge" id="conditionBadge">—</span></p>
+   <div class="actions">
+     <button class="primary" id="generate">Generate New Ship</button>
+     <button id="rerollName">Reroll Name</button>
+     <button id="resetBattle">Reset Battle Values</button>
+   </div>
  </div>
 </section>
 
-<h2 style="margin-top:24px">Combat Dashboard</h2>
-<p class="muted">+ restores or increases. − damages or reduces. Total HP is the combined current HP of all damageable ship components.</p>
+<h2 style="margin-top:26px">Combat Dashboard</h2>
+<p class="muted">− damages or reduces. + repairs, restores, or enhances. HP may be increased above its original value.</p>
 <section id="dashboard" class="dashboard"></section>
 
-<section class="panel" style="margin-top:14px">
- <div class="topline"><div><h2>Ship Space</h2><p class="muted">Usable space can be adjusted during battle.</p></div><button data-reroll="slots">Reroll Slots</button></div>
+<section class="panel">
+ <div class="topline"><div><h2>Ship Space</h2><p class="muted">Current usable space is tracked above. These are the generated slot assignments.</p></div><button data-reroll="slots">Reroll Space</button></div>
  <div id="slotList" class="slotgrid"></div>
 </section>
 
+<section class="panel">
+ <div class="topline"><div><h2>Vessel Condition</h2><div id="conditionTitle" class="muted"></div></div></div>
+ <p id="conditionDescription" class="condition"></p>
+</section>
 
-<section class="panel" style="margin-top:18px">
+<section class="panel">
  <div class="topline"><div><h2>Hull</h2><div id="hullTitle" class="muted"></div></div><button data-reroll="hull">Reroll Hull</button></div>
- <div class="component"><div class="art small">HULL ART<br>images/hulls/</div><div id="hullInfo" class="cards"></div></div>
+ <div class="component"><div class="art small"><div>HULL ART<br><span class="muted">images/hulls/</span></div></div><div id="hullInfo" class="grid3"></div></div>
 </section>
 
-<section class="panel" style="margin-top:14px">
- <div class="topline"><div><h2>Masts & Rigging</h2><div id="mastTitle" class="muted"></div></div><button data-reroll="mast">Reroll Masts</button></div>
- <div class="component"><div class="art small">MAST ART<br>images/masts/</div><div id="mastCards" class="cards"></div></div>
+<section class="panel">
+ <div class="topline"><div><h2>Masts & Rigging</h2><div id="mastTitle" class="muted"></div></div><button data-reroll="masts">Reroll Masts</button></div>
+ <div class="component"><div class="art small"><div>MAST ART<br><span class="muted">images/masts/</span></div></div><div id="mastCards" class="grid3"></div></div>
 </section>
 
-<section class="grid hero" style="margin-top:14px">
- <div class="panel"><div class="topline"><h2>Rudder / Helm</h2><button data-reroll="rudder">Reroll</button></div><div class="art small">RUDDER ART</div><div id="rudderInfo" style="margin-top:12px"></div></div>
+<section class="grid2">
+ <div class="panel"><div class="topline"><h2>Rudder / Helm</h2><button data-reroll="rudder">Reroll</button></div><div id="rudderInfo"></div></div>
  <div class="panel"><div class="topline"><h2>Crew</h2><button data-reroll="crew">Reroll</button></div><div id="crewInfo"></div></div>
 </section>
 
-
-<section class="panel" style="margin-top:14px">
+<section class="panel">
  <div class="topline"><h2>Weapons</h2><button data-reroll="weapons">Reroll Weapons</button></div>
- <div class="art small">WEAPON ART<br>images/weapons/</div><div id="weaponList" class="cards" style="margin-top:12px"></div>
+ <div id="weaponList" class="grid3"></div>
 </section>
 
-<section class="panel" style="margin-top:14px">
+<section class="panel">
  <div class="topline"><div><h2>Cargo & Merchandise</h2><p id="cargoCap" class="muted"></p></div><button data-reroll="cargo">Reroll Cargo</button></div>
  <div style="overflow-x:auto"><table><thead><tr><th>Goods</th><th>Amount</th><th>Price / ton</th><th>Value</th></tr></thead><tbody id="cargoRows"></tbody></table></div>
- <p style="text-align:right;margin-top:12px">Cargo value: <strong id="cargoValue"></strong></p>
+ <p style="text-align:right">Cargo value: <strong id="cargoValue"></strong></p>
 </section>
 </main>
+
 <script>
-const TYPES=[['Sloop',5000,5,1,'Coastal'],['Clipper',10000,8,3,'Fast trader'],['Schooner',14000,9,2,'Merchant'],['Brigantine',18000,11,2,'General purpose'],['Brig',20000,12,2,'Trader / warship'],['Corvette',22000,13,3,'Light warship'],['Frigate',26000,16,3,'Warship'],['Galley',30000,18,2,'Oared vessel']];
-const HULLS=[['Small wood',100,50,10,5,-1],['Medium wood',450,80,10,4,0],['Big wood',900,100,10,3,1],['Small reinforced wood',5000,100,13,5,-1],['Medium reinforced wood',15000,200,13,4,0],['Big reinforced wood',20000,300,13,3,1],['Small steel reinforced',24000,400,15,5,0],['Medium steel reinforced',28000,450,15,4,1],['Big steel reinforced',35000,500,15,3,2],['Spacious wood',30000,350,10,3,4]];
-const QUAL=[['Poor',10,10,0,20],['Normal',20,10,1,55],['Good',30,13,2,85],['Very Good',40,13,3,140],['Extremely Good',50,15,4,300],['Mastercraft',100,15,6,1000]];
-const GOODS=[['Grain',20],['Salt',100],['Timber',20],['Iron',100],['Copper',500],['Ale',200],['Wine',400],['Linen',500],['Wool',250],['Dried fish',80],['Spices',2000],['Silk',4000]];
-const WEAP=[['Light Ballista',25,15],['Ballista',35,15],['Mangonel',45,15],['Heavy Ballista',50,16]];
-const PRE=['Wayward','Silver','Red','Storm','Wandering','Black','Western','Dawn','Lucky','Iron'];
-const NOUN=['Gull','Maiden','Star','Hound','Swan','Drake','Lantern','Compass','Voyager','Mermaid'];
-let S={},live={},max={};
-const pick=a=>a[Math.floor(Math.random()*a.length)],rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,gp=n=>Math.round(n).toLocaleString('en-US')+' gp';
+"use strict";
 
-function rollName(){S.name='The '+pick(PRE)+' '+pick(NOUN)}
-function rollType(){S.t=pick(TYPES)}
-function rollHull(){S.h=pick(HULLS);S.tr=pick(['Standard','Standard','Lean','Sturdy','Long','Mastercraft'])}
-function rollMast(){S.m=pick(QUAL)}
-function rollRudder(){S.r=pick(QUAL)}
-function rollSlots(){let total=Math.max(4,S.t[2]+S.h[5]+(S.tr==='Long'?3:0)),left=total-S.t[3],o={Sails:S.t[3],Cargo:0,Weapons:0,Crew:0,Other:0};while(left-->0){let x=rand(1,10);if(x<=4)o.Cargo++;else if(x<=6)o.Weapons++;else if(x<=9)o.Crew++;else o.Other++}S.sl=o;S.total=total}
-function rollCrew(){S.people=Math.max(3,S.t[3]*3+S.sl.Crew*5+S.sl.Weapons*2)}
-function rollWeapons(){S.weapons=[];for(let i=0;i<S.sl.Weapons*2;i++){let w=pick(WEAP);S.weapons.push({name:w[0],hp:w[1],ac:w[2]})}}
-function rollCargo(){let left=S.sl.Cargo*5;S.cargo=[];while(left>0&&S.cargo.length<4){let g=pick(GOODS),a=Math.min(left,rand(1,left));S.cargo.push({name:g[0],amount:a,unit:g[1],value:a*g[1]});left-=a}}
+/* ---------- DATA ---------- */
+const TYPES=[
+ {name:"Sloop",price:5000,slots:5,masts:[1,1],role:"Coastal vessel"},
+ {name:"Clipper",price:10000,slots:8,masts:[3,3],role:"Fast trader"},
+ {name:"Schooner",price:14000,slots:9,masts:[2,3],role:"Merchant / coastal vessel"},
+ {name:"Brigantine",price:18000,slots:11,masts:[2,2],role:"General-purpose sailing vessel"},
+ {name:"Brig",price:20000,slots:12,masts:[2,2],role:"Trader / warship"},
+ {name:"Corvette",price:22000,slots:13,masts:[2,3],role:"Light warship"},
+ {name:"Frigate",price:26000,slots:16,masts:[3,3],role:"Warship"},
+ {name:"Galley",price:30000,slots:18,masts:[1,2],role:"Oared war vessel"}
+];
 
-function establish(){
- let hull=S.h[2]+(S.tr==='Sturdy'?100:S.tr==='Lean'?-40:S.tr==='Mastercraft'?100:0);
- max={hull,rudder:S.r[1],crew:S.people,speed:Math.max(1,S.h[4]+S.m[3]+(S.tr==='Lean'?3:S.tr==='Mastercraft'?1:0)),handling:S.r[3],space:S.total};
- max.masts=Array.from({length:S.t[3]},()=>S.m[1]);max.weapons=S.weapons.map(w=>w.hp);
- max.total=max.hull+max.rudder+max.crew+max.masts.reduce((a,b)=>a+b,0)+max.weapons.reduce((a,b)=>a+b,0);
- live={hull:max.hull,rudder:max.rudder,crew:max.crew,speed:max.speed,handling:max.handling,space:max.space,masts:[...max.masts],weapons:[...max.weapons],total:max.total}
+const HULLS=[
+ {name:"Small wood",cost:100,slots:2,ac:10,hp:50,speed:5},
+ {name:"Medium wood",cost:450,slots:5,ac:10,hp:80,speed:4},
+ {name:"Big wood",cost:900,slots:8,ac:10,hp:100,speed:3},
+ {name:"Small reinforced wood",cost:5000,slots:2,ac:13,hp:100,speed:5},
+ {name:"Medium reinforced wood",cost:15000,slots:5,ac:13,hp:200,speed:4},
+ {name:"Big reinforced wood",cost:20000,slots:8,ac:13,hp:300,speed:3},
+ {name:"Small steel-reinforced wood",cost:24000,slots:4,ac:15,hp:400,speed:5},
+ {name:"Medium steel-reinforced wood",cost:28000,slots:7,ac:15,hp:450,speed:4},
+ {name:"Big steel-reinforced wood",cost:35000,slots:9,ac:15,hp:500,speed:3},
+ {name:"Spacious",cost:30000,slots:14,ac:10,hp:350,speed:3}
+];
+
+const MASTS=[
+ {name:"Jack Sparrow",speed:-1,hp:10,space:0,ac:5,cost:0},
+ {name:"Poor",speed:0,hp:10,space:1,ac:10,cost:20},
+ {name:"Normal",speed:1,hp:20,space:1,ac:10,cost:55},
+ {name:"Good",speed:2,hp:30,space:2,ac:13,cost:85},
+ {name:"Very Good",speed:3,hp:40,space:2,ac:13,cost:140},
+ {name:"Extremely Good",speed:4,hp:50,space:3,ac:15,cost:300},
+ {name:"Mastercraft",speed:7,hp:100,space:3,ac:15,cost:1000}
+];
+
+const RUDDERS=[
+ {name:"Bad",handling:-1,hp:10,space:1,ac:5,cost:0},
+ {name:"Poor",handling:0,hp:10,space:1,ac:10,cost:20},
+ {name:"Normal",handling:1,hp:20,space:2,ac:10,cost:55},
+ {name:"Good",handling:2,hp:30,space:2,ac:13,cost:85},
+ {name:"Very Good",handling:3,hp:40,space:3,ac:13,cost:140},
+ {name:"Extremely Good",handling:4,hp:50,space:3,ac:15,cost:300},
+ {name:"Mastercraft",handling:6,hp:100,space:4,ac:15,cost:1000}
+];
+
+const WEAPONS=[
+ {name:"Light Ballista",hp:25,ac:15,space:1},
+ {name:"Ballista",hp:50,ac:15,space:2},
+ {name:"Mangonel",hp:100,ac:15,space:3},
+ {name:"Heavy Ballista",hp:60,ac:16,space:2}
+];
+
+const GOODS=[
+ ["Grain",20],["Salt",100],["Timber",20],["Iron",100],["Copper",500],
+ ["Ale",200],["Wine",400],["Linen",500],["Wool",250],["Dried Fish",80],
+ ["Spices",2000],["Silk",4000]
+];
+
+const PRE=["Wayward","Silver","Red","Storm","Wandering","Black","Western","Dawn","Lucky","Iron","Golden","Salt","Broken","Northern","Sea"];
+const NOUN=["Gull","Maiden","Star","Hound","Swan","Drake","Lantern","Compass","Voyager","Mermaid","Heron","Crown","Tide","Promise","Fortune"];
+
+const DAMAGE_TEXT={
+ hull:{
+  moderate:[
+   "The hull carries the scars of a hard voyage. Long splinters curl from cracked planks and several small breaches have been roughly patched.",
+   "Fresh timber shows beneath the weathered hull. Gouges, impact marks and hurried patches tell of a recent and unpleasant encounter.",
+   "The hull has been mauled but not broken. Split boards and plugged holes stand out like old battle scars.",
+   "Something struck the hull hard. Chipped timber, pulled fastenings and crude repairs run along one side.",
+   "Deep scrapes and splintered planks mark the hull, with patched punctures where sea or steel nearly found a way inside."
+  ],
+  severe:[
+   "The hull looks as though it survived by stubbornness alone. Whole planks are shattered, jagged holes gape between crude patches, and exposed ribs show through splintered timber.",
+   "This vessel has been brutally punished. Sections of hull are stove in and broken boards jut outward like snapped bones.",
+   "Timber has burst inward around several impacts. Great splinters frame dark holes while emergency repairs strain against the sea.",
+   "Crushed planking, exposed framing and ugly patched breaches suggest the ship once came dangerously close to sinking.",
+   "The hull is a wounded thing. Deep holes have been boarded over in haste and every groan of timber seems to remember the blow that caused them."
+  ]
+ },
+ sail:{
+  moderate:[
+   "The sail is wounded by wind and violence alike: long tears cross the canvas, ropes have been knotted back together, and blackened edges curl where flame once caught.",
+   "Ragged cuts run through the sail and several lines of rigging are obvious replacements. Scorched canvas shows where fire was put out just in time.",
+   "Canvas snaps through poorly stitched tears, frayed ropes hang among the lines, and a dark burn mark spreads across one corner.",
+   "The sail hangs unevenly, scarred by tears and crude stitching. Several ropes are new while burnt edges show where flame licked across the canvas.",
+   "Wind catches through holes that should not be there. Torn canvas, fraying rigging and smoke-darkened edges give the mast the look of a survivor."
+  ],
+  severe:[
+   "The mast carries a ruin of canvas. Great sections of sail have been ripped away, rigging hangs in tangled lengths, and the remaining cloth is blackened by fire.",
+   "What remains of the sail lashes violently in the wind. Canvas hangs in ragged strips and charred lines trail across the rigging.",
+   "The rigging is a wreck. Torn sailcloth flaps like banners after a battle while snapped lines sway overhead.",
+   "The sail has been savaged. Huge tears gape through the canvas and fire has eaten black crescents into what remains.",
+   "Little about the rig inspires confidence. The sail is shredded, ropes are knotted wherever they could be saved, and burnt canvas hangs from the mast like a warning."
+  ]
+ },
+ rudder:{
+  moderate:[
+   "The helm answers with an unhealthy stiffness. Cracked fittings and fresh reinforcement suggest a violent impact astern.",
+   "The rudder still obeys, but reluctantly. Timber around its fittings is cracked and the wheel shudders under strain.",
+   "Ironwork sits slightly crooked and every turn of the helm carries a protesting creak.",
+   "Worn fittings and split wood have been patched together well enough to sail, though not without complaint.",
+   "Damaged fittings grind under movement and a crude brace holds cracked timber around the rudder assembly."
+  ],
+  severe:[
+   "The rudder hangs on through sheer determination. Splintered timber, twisted fittings and desperate reinforcement make every turn a fight.",
+   "Steering this vessel is an argument with broken machinery. The rudder is cracked and twisted and the helm bucks when forced around.",
+   "Heavy braces surround fractured timber, iron fittings have bent out of true, and the rudder responds with alarming hesitation.",
+   "The helm feels dangerously loose. Damaged gear slips and catches while the battered rudder shudders behind the ship.",
+   "A brutal impact nearly took the rudder away. What remains has been lashed, bolted and braced back into service."
+  ]
+ },
+ crew:{
+  moderate:[
+   n=>`The deck feels strangely quiet. Roughly ${n} expected sailors are absent, leaving the remaining crew rushing between duties.`,
+   n=>`There are empty places in the watches. About ${n} sailors are missing and exhaustion is beginning to show.`,
+   n=>`The crew is stretched thin. With roughly ${n} fewer able sailors than intended, every hand seems to be doing the work of two.`,
+   n=>`This ship should sound busier. Around ${n} crew positions stand vacant, forcing deckhands to cover unfamiliar duties.`,
+   n=>`The vessel sails short-handed by about ${n}. Watches are longer and too many ropes wait for too few hands.`
+  ],
+  severe:[
+   n=>`The ship is desperately understaffed. Roughly ${n} sailors are missing, leaving exhausted hands scrambling simply to keep her sailing.`,
+   n=>`Too many hammocks are empty. About ${n} crew are gone and the survivors know there is nobody left to relieve them.`,
+   n=>`The crew has been cut frighteningly thin—roughly ${n} sailors below strength. Essential stations sometimes stand unattended.`,
+   n=>`This vessel is sailing with a skeleton crew. Around ${n} expected hands are absent, turning every manoeuvre into a frantic race across the deck.`,
+   n=>`The human cost is impossible to miss. Roughly ${n} sailors are missing and the remaining crew look worn down by sleepless watches.`
+  ]
+ },
+ weapon:{
+  moderate:[
+   "The weapon bears the marks of a close call. Cracked fittings, bent hardware and missing pieces have been replaced with whatever the crew could find.",
+   "Its mounting is scarred and temporary repairs hold several important pieces together.",
+   "Hardware is bent, parts are missing, and improvised repairs surround the battered mounting.",
+   "Cracked timber and replacement fittings stand out clearly against the older construction.",
+   "The weapon has survived one fight already. Its mounting is chipped and crude repairs suggest it was returned to service in a hurry."
+  ],
+  severe:[
+   "The weapon is little more than wreckage. Its mounting is smashed, critical pieces are gone, and broken parts lie scattered across the deck.",
+   "Something hit this weapon hard enough to erase its usefulness. Splintered supports surround an empty, ruined mounting.",
+   "The fighting position has been devastated. The weapon is missing or shattered beyond use.",
+   "Only the corpse of the weapon remains: a broken frame, missing mechanisms and fragments scattered around the mount.",
+   "The weapon has been destroyed with brutal efficiency. Mangled supports and snapped components are all that remain."
+  ]
+ }
+};
+
+/* ---------- STATE ---------- */
+let ship=null;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const gp=n=>Math.round(n).toLocaleString("en-US")+" gp";
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+function weightedPick(arr){
+ const r=Math.random();
+ if(r<.08)return arr[0];
+ if(r<.25)return arr[1];
+ if(r<.58)return arr[2];
+ if(r<.78)return arr[3];
+ if(r<.90)return arr[4];
+ if(r<.97)return arr[5];
+ return arr[6];
 }
-function recalcTotal(){live.total=live.hull+live.rudder+live.crew+live.masts.reduce((a,b)=>a+b,0)+live.weapons.reduce((a,b)=>a+b,0)}
-function tracker(key,label,val,maximum,index){
- return `<div class="stat"><div class="label">${label}</div><div class="tracker"><button data-adjust="${key}" data-index="${index??''}" data-delta="1">+</button><div class="value">${val}${maximum!==undefined?' / '+maximum:''}</div><button data-adjust="${key}" data-index="${index??''}" data-delta="-1">−</button></div>${maximum!==undefined?`<div class="bar"><div class="fill" style="width:${Math.max(0,Math.min(100,val/maximum*100))}%"></div></div>`:''}</div>`
+function randomName(){return "The "+pick(PRE)+" "+pick(NOUN)}
+
+function createHull(){
+ const base=clone(pick(HULLS));
+ const trait=pick(["Standard","Standard","Standard","Lean","Sturdy","Long"]);
+ const extra=Math.random()<.22?pick(["Oars","Mastercraft"]):"None";
+ let h={...base,trait,extra};
+ if(trait==="Lean"){h.speed+=3;h.ac=Math.max(1,h.ac-4);h.hp=Math.max(1,h.hp-6)}
+ if(trait==="Sturdy"){h.hp+=10;h.ac+=3;h.speed=Math.max(.5,h.speed-.5)}
+ if(trait==="Long")h.slots+=3;
+ if(extra==="Oars"){h.speed+=3;h.slots=Math.max(0,h.slots-2)}
+ if(extra==="Mastercraft"){h.slots=Math.max(0,h.slots-1);h.ac+=1;h.speed+=1;h.hp+=100}
+ return h;
 }
+
+function allocateSpace(type,hull,masts,rudder){
+ const capacity=Math.max(type.slots,hull.slots);
+ const structural=masts.reduce((s,m)=>s+m.space,0)+rudder.space;
+ let available=Math.max(0,capacity-structural);
+ const slots={Sails:masts.length,Cargo:0,Weapons:0,Crew:0,Other:0};
+ while(available>0){
+  const r=Math.random();
+  if(r<.38)slots.Cargo++;
+  else if(r<.62)slots.Crew++;
+  else if(r<.82)slots.Weapons++;
+  else slots.Other++;
+  available--;
+ }
+ return {capacity,structural,slots};
+}
+
+function makeCargo(cargoSlots){
+ let tons=cargoSlots*5, cargo=[];
+ while(tons>0 && cargo.length<6){
+  const [name,price]=pick(GOODS);
+  const amount=Math.min(tons,rand(1,Math.max(1,tons)));
+  cargo.push({name,price,amount,value:price*amount});
+  tons-=amount;
+ }
+ return cargo;
+}
+
+function makeShip(){
+ const type=clone(pick(TYPES));
+ const hull=createHull();
+ const mastCount=rand(type.masts[0],type.masts[1]);
+ const masts=Array.from({length:mastCount},()=>clone(weightedPick(MASTS)));
+ const rudder=clone(weightedPick(RUDDERS));
+ const allocation=allocateSpace(type,hull,masts,rudder);
+ const crewMax=Math.max(3,mastCount*3+allocation.slots.Crew*5+allocation.slots.Weapons*2);
+ const weapons=Array.from({length:allocation.slots.Weapons},()=>clone(pick(WEAPONS)));
+ const speed=Math.max(.5,hull.speed+masts.reduce((s,m)=>s+m.speed,0)/Math.max(1,masts.length));
+ const handling=rudder.handling;
+ const cargo=makeCargo(allocation.slots.Cargo);
+
+ ship={
+  name:randomName(),type,hull,masts,rudder,weapons,cargo,
+  slots:allocation.slots,capacity:allocation.capacity,structural:allocation.structural,
+  base:{hull:hull.hp,masts:masts.map(m=>m.hp),rudder:rudder.hp,crew:crewMax,weapons:weapons.map(w=>w.hp),speed,handling,space:allocation.capacity},
+  current:{hull:hull.hp,masts:masts.map(m=>m.hp),rudder:rudder.hp,crew:crewMax,weapons:weapons.map(w=>w.hp),speed,handling,space:allocation.capacity},
+  startingCondition:"Intact",damageDescription:""
+ };
+ applyStartingDamage();
+ render();
+}
+
+function totalHP(which="current"){
+ const x=ship[which];
+ return x.hull+x.rudder+x.crew+x.masts.reduce((a,b)=>a+b,0)+x.weapons.reduce((a,b)=>a+b,0);
+}
+
+function damageParts(){
+ const c=ship.current,b=ship.base;
+ return [
+  {label:"Hull",kind:"hull",get:()=>c.hull,set:v=>c.hull=v,base:b.hull},
+  ...c.masts.map((_,i)=>({label:`Mast ${i+1}`,kind:"sail",get:()=>c.masts[i],set:v=>c.masts[i]=v,base:b.masts[i]})),
+  {label:"Rudder",kind:"rudder",get:()=>c.rudder,set:v=>c.rudder=v,base:b.rudder},
+  {label:"Crew",kind:"crew",get:()=>c.crew,set:v=>c.crew=v,base:b.crew},
+  ...c.weapons.map((_,i)=>({label:`Weapon ${i+1}`,kind:"weapon",get:()=>c.weapons[i],set:v=>c.weapons[i]=v,base:b.weapons[i]}))
+ ];
+}
+
+function applyStartingDamage(){
+ if(Math.random()<.65){
+  ship.startingCondition="Intact";
+  buildDamageDescription();
+  return;
+ }
+ const parts=damageParts();
+ let amount=Math.max(1,Math.round(totalHP("base")*(.05+Math.random()*.30)));
+ const concentrated=Math.random()<.55;
+ const hurt=(p,n)=>{
+  const hit=Math.min(n,Math.max(0,p.get()-1));
+  p.set(p.get()-hit); return hit;
+ };
+ if(concentrated){
+  const target=pick(parts);
+  amount-=hurt(target,amount);
+  for(const p of parts.filter(x=>x!==target).sort(()=>Math.random()-.5)){
+   if(amount<=0)break; amount-=hurt(p,amount);
+  }
+  ship.startingCondition="Damaged — mainly "+target.label;
+ }else{
+  let guard=0;
+  while(amount>0&&guard++<1000){
+   const viable=parts.filter(p=>p.get()>1);
+   if(!viable.length)break;
+   const p=pick(viable);
+   amount-=hurt(p,Math.max(1,Math.ceil(amount*(.10+Math.random()*.25))));
+  }
+  ship.startingCondition="Damaged — spread across ship";
+ }
+ buildDamageDescription();
+}
+
+function buildDamageDescription(){
+ const notes=[];
+ for(const p of damageParts()){
+  if(p.get()>=p.base)continue;
+  const r=p.get()/p.base;
+  const severity=r<.45?"severe":"moderate";
+  if(p.kind==="crew"){
+   const missing=Math.max(1,p.base-p.get());
+   notes.push(pick(DAMAGE_TEXT.crew[severity])(missing));
+  }else{
+   let text=pick(DAMAGE_TEXT[p.kind][severity]);
+   if(p.kind==="sail"||p.kind==="weapon")text=p.label+": "+text;
+   notes.push(text);
+  }
+ }
+ ship.damageDescription=notes.length?notes.join(" "):
+  "The vessel appears intact. Her hull, rigging, steering, crew complement and weapons show no significant existing damage.";
+}
+
+function tracker(key,label,value,base,index=null,showBase=true){
+ const idx=index===null?"":index;
+ const maxText=showBase?` / ${fmt(base)}`:"";
+ const pct=showBase&&base>0?Math.min(100,Math.max(0,value/base*100)):100;
+ return `<div class="stat"><div class="label">${label}</div>
+ <div class="tracker"><button data-key="${key}" data-index="${idx}" data-delta="-1">−</button>
+ <div class="value">${fmt(value)}${maxText}</div>
+ <button data-key="${key}" data-index="${idx}" data-delta="1">+</button></div>
+ ${showBase?`<div class="bar"><div class="fill" style="width:${pct}%"></div></div>`:""}</div>`;
+}
+function fmt(n){return Number.isInteger(n)?n:n.toFixed(1)}
+
 function render(){
- let ha=S.h[3]+(S.tr==='Sturdy'?3:S.tr==='Lean'?-4:S.tr==='Mastercraft'?1:0);
- document.querySelector('#shipName').textContent=S.name;document.querySelector('#shipDesc').textContent=`${S.t[0]} · ${S.h[0]} · ${S.t[4]}`;document.querySelector('#artPath').textContent='images/ships/'+S.t[0].toLowerCase()+'.png';
- let dash=tracker('total','TOTAL HP',live.total,max.total)+tracker('hull','HULL HP',live.hull,max.hull);
- live.masts.forEach((v,i)=>dash+=tracker('masts','MAST '+(i+1)+' HP',v,max.masts[i],i));
- dash+=tracker('rudder','RUDDER HP',live.rudder,max.rudder)+tracker('crew','CREW HP',live.crew,max.crew)+tracker('speed','SPEED',live.speed)+tracker('handling','HANDLING',live.handling)+tracker('space','USABLE SPACE',live.space);
- live.weapons.forEach((v,i)=>dash+=tracker('weapons','WEAPON '+(i+1)+' HP',v,max.weapons[i],i));
- document.querySelector('#dashboard').innerHTML=dash;
- document.querySelector('#hullTitle').textContent=S.h[0]+' · '+S.tr+' hull';
- document.querySelector('#hullInfo').innerHTML=`<div class="stat">Max HP<br><b>${max.hull}</b></div><div class="stat">AC<br><b>${ha}</b></div><div class="stat">Base speed<br><b>${S.h[4]} mph</b></div><div class="stat">Cost<br><b>${gp(S.h[1])}</b></div>`;
- document.querySelector('#mastTitle').textContent=S.t[3]+' × '+S.m[0];
- document.querySelector('#mastCards').innerHTML=max.masts.map((x,i)=>`<div class="stat"><b>${['Foremast','Mainmast','Mizzenmast'][i]||'Mast '+(i+1)}</b><br>HP ${live.masts[i]}/${x} · AC ${S.m[2]}</div>`).join('');
- document.querySelector('#rudderInfo').innerHTML=`<b>${S.r[0]}</b><br>HP ${live.rudder}/${max.rudder} · AC ${S.r[2]} · Handling +${S.r[3]}`;
- document.querySelector('#crewInfo').innerHTML=`<h3>${S.people} sailors</h3><p>Current crew HP: <b>${live.crew}/${max.crew}</b></p><p class="muted">Crew HP represents sailors still able to operate the vessel.</p>`;
- document.querySelector('#slotList').innerHTML=Object.entries(S.sl).map(([k,v])=>`<div class="stat" style="text-align:center"><span class="muted">${k}</span><br><b style="font-size:22px">${v}</b></div>`).join('');
- document.querySelector('#weaponList').innerHTML=S.weapons.length?S.weapons.map((w,i)=>`<div class="stat"><b>${w.name} ${i+1}</b><br>HP ${live.weapons[i]}/${max.weapons[i]} · AC ${w.ac}</div>`).join(''):'<p class="muted">Unarmed</p>';
- document.querySelector('#cargoCap').textContent=`${S.sl.Cargo} cargo slots · ${S.sl.Cargo*5} tons`;
- document.querySelector('#cargoRows').innerHTML=S.cargo.length?S.cargo.map(x=>`<tr><td>${x.name}</td><td>${x.amount} tons</td><td>${gp(x.unit)}</td><td>${gp(x.value)}</td></tr>`).join(''):'<tr><td colspan="4">No cargo.</td></tr>';
- document.querySelector('#cargoValue').textContent=gp(S.cargo.reduce((a,x)=>a+x.value,0));
- bindAdjust();
+ if(!ship)return;
+ document.getElementById("shipName").textContent=ship.name;
+ document.getElementById("shipDesc").textContent=`${ship.type.name} · ${ship.hull.name} · ${ship.type.role}`;
+ document.getElementById("conditionBadge").textContent=ship.startingCondition;
+ document.getElementById("conditionTitle").textContent=ship.startingCondition;
+ document.getElementById("conditionDescription").textContent=ship.damageDescription;
+ const art="images/ships/"+ship.type.name.toLowerCase().replaceAll(" ","-")+".png";
+ document.getElementById("artPath").textContent=art;
+ const img=document.getElementById("shipImage"),fallback=document.getElementById("shipArtFallback");
+ img.onload=()=>{img.style.display="block";fallback.style.display="none"};
+ img.onerror=()=>{img.style.display="none";fallback.style.display="block"};
+ img.src=art;
+
+ let d=tracker("total","TOTAL HP",totalHP(),totalHP("base"));
+ d+=tracker("hull","HULL HP",ship.current.hull,ship.base.hull);
+ ship.current.masts.forEach((v,i)=>d+=tracker("masts",`MAST ${i+1} HP`,v,ship.base.masts[i],i));
+ d+=tracker("rudder","RUDDER HP",ship.current.rudder,ship.base.rudder);
+ d+=tracker("crew","CREW HP",ship.current.crew,ship.base.crew);
+ d+=tracker("speed","SPEED",ship.current.speed,ship.base.speed,null,false);
+ d+=tracker("handling","HANDLING",ship.current.handling,ship.base.handling,null,false);
+ d+=tracker("space","USABLE SPACE",ship.current.space,ship.base.space,null,false);
+ ship.current.weapons.forEach((v,i)=>d+=tracker("weapons",`WEAPON ${i+1} HP`,v,ship.base.weapons[i],i));
+ document.getElementById("dashboard").innerHTML=d;
+
+ document.getElementById("slotList").innerHTML=Object.entries(ship.slots).map(([k,v])=>`<div class="stat slot"><span class="muted">${k}</span><br><b>${v}</b></div>`).join("");
+
+ document.getElementById("hullTitle").textContent=`${ship.hull.name} · ${ship.hull.trait}${ship.hull.extra!=="None"?" · "+ship.hull.extra:""}`;
+ document.getElementById("hullInfo").innerHTML=[
+  ["Current / Base HP",`${ship.current.hull} / ${ship.base.hull}`],
+  ["AC",ship.hull.ac],["Speed",fmt(ship.hull.speed)+" mph"],["Hull Space",ship.hull.slots],["Hull Cost",gp(ship.hull.cost)],["Ship Type Price",gp(ship.type.price)]
+ ].map(x=>`<div class="stat"><span class="muted">${x[0]}</span><br><b>${x[1]}</b></div>`).join("");
+
+ document.getElementById("mastTitle").textContent=`${ship.masts.length} mast${ship.masts.length===1?"":"s"}`;
+ document.getElementById("mastCards").innerHTML=ship.masts.map((m,i)=>`<div class="stat"><b>${["Foremast","Mainmast","Mizzenmast"][i]||"Mast "+(i+1)}</b><br>${m.name}<br>HP ${ship.current.masts[i]} / ${ship.base.masts[i]}<br>AC ${m.ac}<br>Speed ${m.speed>=0?"+":""}${m.speed}<br>Space ${m.space}<br>${gp(m.cost)}</div>`).join("");
+
+ const r=ship.rudder;
+ document.getElementById("rudderInfo").innerHTML=`<h3>${r.name}</h3><p>HP <b>${ship.current.rudder} / ${ship.base.rudder}</b> · AC <b>${r.ac}</b></p><p>Handling <b>${r.handling>=0?"+":""}${r.handling}</b> · Space <b>${r.space}</b> · Cost <b>${gp(r.cost)}</b></p>`;
+ document.getElementById("crewInfo").innerHTML=`<h3>${ship.base.crew} intended sailors</h3><p>Current able crew: <b>${ship.current.crew} / ${ship.base.crew}</b></p><p class="muted">Crew HP represents sailors still able to operate the vessel.</p>`;
+
+ document.getElementById("weaponList").innerHTML=ship.weapons.length?ship.weapons.map((w,i)=>`<div class="stat"><b>${w.name}</b><br>HP ${ship.current.weapons[i]} / ${ship.base.weapons[i]}<br>AC ${w.ac}<br>Space ${w.space}</div>`).join(""):`<p class="muted">This vessel carries no generated siege weapons.</p>`;
+
+ const tons=ship.slots.Cargo*5;
+ document.getElementById("cargoCap").textContent=`${ship.slots.Cargo} cargo slots · up to ${tons} tons`;
+ document.getElementById("cargoRows").innerHTML=ship.cargo.length?ship.cargo.map(x=>`<tr><td>${x.name}</td><td>${x.amount} tons</td><td>${gp(x.price)}</td><td>${gp(x.value)}</td></tr>`).join(""):`<tr><td colspan="4">No cargo generated.</td></tr>`;
+ document.getElementById("cargoValue").textContent=gp(ship.cargo.reduce((s,x)=>s+x.value,0));
+
+ bindTrackers();
 }
-function bindAdjust(){document.querySelectorAll('[data-adjust]').forEach(b=>b.onclick=()=>{let k=b.dataset.adjust,d=Number(b.dataset.delta),idx=b.dataset.index;if(k==='total'){if(d<0&&live.hull>0)live.hull--;else if(d>0)live.hull=Math.min(max.hull,live.hull+1)}else if(idx!==''){let i=Number(idx);live[k][i]=Math.max(0,Math.min(max[k][i],live[k][i]+d))}else if(['hull','rudder','crew'].includes(k))live[k]=Math.max(0,Math.min(max[k],live[k]+d));else live[k]=Math.max(0,live[k]+d);recalcTotal();render()})}
-function full(){rollName();rollType();rollHull();rollMast();rollRudder();rollSlots();rollCrew();rollWeapons();rollCargo();establish();render()}
-document.querySelector('#generate').onclick=full;
-document.querySelector('#rerollName').onclick=()=>{rollName();render()};
-document.querySelector('#resetBattle').onclick=()=>{establish();render()};
-document.querySelectorAll('[data-reroll]').forEach(b=>b.onclick=()=>{let x=b.dataset.reroll;if(x==='hull')rollHull();if(x==='mast')rollMast();if(x==='rudder')rollRudder();if(x==='slots')rollSlots();if(x==='crew')rollCrew();if(x==='weapons')rollWeapons();if(x==='cargo'){rollCargo();render();return}if(['hull','slots'].includes(x)){rollCrew();rollWeapons();rollCargo()}establish();render()});
-full();
+
+function bindTrackers(){
+ document.querySelectorAll("[data-key]").forEach(btn=>btn.onclick=()=>{
+  const key=btn.dataset.key,delta=Number(btn.dataset.delta),idx=btn.dataset.index;
+  if(key==="total"){
+   // Total is derived. Direct adjustment is applied to the hull.
+   ship.current.hull=Math.max(0,ship.current.hull+delta);
+  }else if(idx!==""){
+   const i=Number(idx);
+   ship.current[key][i]=Math.max(0,ship.current[key][i]+delta);
+  }else{
+   ship.current[key]=Math.max(0,ship.current[key]+delta);
+  }
+  render();
+ });
+}
+
+function rebuildDependent(){
+ const a=allocateSpace(ship.type,ship.hull,ship.masts,ship.rudder);
+ ship.slots=a.slots;ship.capacity=a.capacity;ship.structural=a.structural;
+ const crew=Math.max(3,ship.masts.length*3+ship.slots.Crew*5+ship.slots.Weapons*2);
+ ship.weapons=Array.from({length:ship.slots.Weapons},()=>clone(pick(WEAPONS)));
+ ship.cargo=makeCargo(ship.slots.Cargo);
+ ship.base.crew=crew;ship.current.crew=crew;
+ ship.base.weapons=ship.weapons.map(w=>w.hp);ship.current.weapons=[...ship.base.weapons];
+ ship.base.space=a.capacity;ship.current.space=a.capacity;
+}
+
+document.getElementById("generate").onclick=makeShip;
+document.getElementById("rerollName").onclick=()=>{ship.name=randomName();render()};
+document.getElementById("resetBattle").onclick=()=>{
+ ship.current=clone(ship.base);
+ ship.startingCondition="Intact";
+ buildDamageDescription();render();
+};
+
+document.querySelectorAll("[data-reroll]").forEach(btn=>btn.onclick=()=>{
+ const what=btn.dataset.reroll;
+ if(what==="hull"){
+  ship.hull=createHull();ship.base.hull=ship.hull.hp;ship.current.hull=ship.hull.hp;
+  rebuildDependent();
+ }else if(what==="masts"){
+  const n=rand(ship.type.masts[0],ship.type.masts[1]);
+  ship.masts=Array.from({length:n},()=>clone(weightedPick(MASTS)));
+  ship.base.masts=ship.masts.map(m=>m.hp);ship.current.masts=[...ship.base.masts];
+  rebuildDependent();
+ }else if(what==="rudder"){
+  ship.rudder=clone(weightedPick(RUDDERS));ship.base.rudder=ship.rudder.hp;ship.current.rudder=ship.rudder.hp;
+ }else if(what==="slots"){
+  rebuildDependent();
+ }else if(what==="crew"){
+  const ideal=Math.max(3,ship.masts.length*3+ship.slots.Crew*5+ship.slots.Weapons*2);
+  ship.base.crew=ideal;ship.current.crew=ideal;
+ }else if(what==="weapons"){
+  ship.weapons=Array.from({length:ship.slots.Weapons},()=>clone(pick(WEAPONS)));
+  ship.base.weapons=ship.weapons.map(w=>w.hp);ship.current.weapons=[...ship.base.weapons];
+ }else if(what==="cargo"){
+  ship.cargo=makeCargo(ship.slots.Cargo);
+ }
+ buildDamageDescription();render();
+});
+
+makeShip();
 </script>
 </body>
 </html>
