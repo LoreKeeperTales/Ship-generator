@@ -40,6 +40,16 @@ button:hover{border-color:var(--gold2);background:#183b56}
 .slot{text-align:center}
 .slot b{font-size:24px}
 .condition{line-height:1.6}
+.attack-board{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));gap:10px}
+.attack-card{background:#132d43;border:2px solid var(--gold);border-radius:10px;padding:12px}
+.attack-card .attack-name{font-size:17px;font-weight:700;color:var(--gold2);margin-bottom:7px}
+.attack-line{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:7px 0}
+.attack-big{background:#081827;border:1px solid #80652f;border-radius:7px;padding:8px;text-align:center}
+.attack-big b{display:block;font:700 20px Arial,sans-serif;color:var(--text)}
+.attack-big span{font:700 10px Arial,sans-serif;color:var(--muted);letter-spacing:.05em}
+.attack-meta{font:12px Arial,sans-serif;color:var(--muted);line-height:1.45}
+@media(max-width:1100px){.attack-board{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.attack-board{grid-template-columns:1fr}}
 table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif}
 th,td{padding:9px;border-bottom:1px solid #76551f;text-align:left}
 th:last-child,td:last-child{text-align:right}
@@ -79,6 +89,13 @@ section{margin-top:14px}
 <h2 style="margin-top:26px">Combat Dashboard</h2>
 <p class="muted">− damages or reduces. + repairs, restores, or enhances. HP may exceed base HP. Speed and Handling automatically include damage-threshold penalties; their +/- buttons adjust the underlying vessel stat.</p>
 <section id="dashboard" class="dashboard"></section>
+
+<section class="panel" id="quickAttackPanel">
+ <div class="topline">
+  <div><h2>Quick Attacks</h2><p class="muted">All attacks currently able to fire. Attack and damage values update with crew casualties and weapon damage.</p></div>
+ </div>
+ <div id="quickAttacks" class="attack-board"></div>
+</section>
 
 <section class="panel">
  <div class="topline"><div><h2>Ship Space</h2><p class="muted">Current usable space is tracked above. These are the generated slot assignments.</p></div><button data-reroll="slots">Reroll Space</button></div>
@@ -661,6 +678,61 @@ function weaponCrewStatus(w){
  if(assigned===1)return {assigned,penalty:-4,text:"Severely understaffed"};
  return {assigned,penalty:-2,text:"Understaffed"};
 }
+function renderQuickAttacks(){
+ const p=ship.crewProfile,q=ship.qualityCfg||{attack:0};
+ const factor=availableCrewFactor();
+ const alive=n=>Math.max(0,Math.min(n,Math.floor(n*factor)));
+ const cards=[];
+
+ ship.weapons.forEach((w,i)=>{
+  const hp=ship.current.weapons[i],ratio=hpRatio(hp,ship.base.weapons[i]),cs=weaponCrewStatus(w);
+  if(hp<=0||cs.assigned<=0)return;
+  const dmgPenalty=ratio<.25?-4:ratio<.5?-2:0;
+  const atk=w.attack+(q.attack||0)+cs.penalty+dmgPenalty;
+  cards.push(`<div class="attack-card">
+   <div class="attack-name">${w.name}</div>
+   <div class="attack-line">
+    <div class="attack-big"><span>ATTACK</span><b>${atk>=0?"+":""}${atk}</b></div>
+    <div class="attack-big"><span>DAMAGE</span><b>${w.damage}</b></div>
+   </div>
+   <div class="attack-meta">${w.type} · Range ${w.range}<br>Crew ${cs.assigned}/${w.crew} · ${cs.text}</div>
+  </div>`);
+ });
+
+ if(p.missileType&&p.missileCount){
+  const n=alive(p.missileCount),m=p.missileType;
+  if(n>0){
+   const atk=m.attack+(q.attack||0);
+   cards.push(`<div class="attack-card">
+    <div class="attack-name">${m.name} Volley ×${n}</div>
+    <div class="attack-line">
+     <div class="attack-big"><span>ATTACK</span><b>${atk>=0?"+":""}${atk}</b></div>
+     <div class="attack-big"><span>DAMAGE</span><b>${n}${m.die}</b></div>
+    </div>
+    <div class="attack-meta">${m.type} · Range ${m.range}<br>${n}/${p.missileCount} currently able</div>
+   </div>`);
+  }
+ }
+
+ if(p.mage&&alive(1)>0){
+  const spellLines=p.mage.spells.map(s=>{
+   const parts=s.replace(/^\+\s*/,"").split("—");
+   return `<div style="margin-top:7px"><b>${parts[0].trim()}</b>${parts[1]?` — ${parts[1].trim()}`:""}</div>`;
+  }).join("");
+  cards.push(`<div class="attack-card">
+   <div class="attack-name">${p.mage.name}</div>
+   <div class="attack-line">
+    <div class="attack-big"><span>SPELL ATTACK</span><b>+5</b></div>
+    <div class="attack-big"><span>SAVE DC</span><b>13</b></div>
+   </div>
+   <div class="attack-meta">${spellLines}</div>
+  </div>`);
+ }
+
+ document.getElementById("quickAttacks").innerHTML=cards.length?cards.join(""):
+  `<div class="attack-card"><div class="attack-name">No attacks ready</div><div class="attack-meta">No able combat crew or operational weapons are currently available.</div></div>`;
+}
+
 function renderCrewCombat(){
  const p=ship.crewProfile,q=ship.qualityCfg||{handling:0,attack:0,repair:1};
  const factor=availableCrewFactor();
@@ -747,7 +819,8 @@ function render(){
   ? repairs.filter(r=>r.missing>0).map(r=>`<tr><td>${r.name}</td><td>${Math.round(r.condition)}%</td><td>${r.missing}</td><td>${gp(r.repairCost)}</td></tr>`).join("")
   : `<tr><td colspan="4">No physical repairs required.</td></tr>`;
 
- renderCrewCombat();
+ renderQuickAttacks();
+  renderCrewCombat();
  document.getElementById("slotList").innerHTML=Object.entries(ship.slots).map(([k,v])=>`<div class="stat slot"><span class="muted">${k}</span><br><b>${v}</b></div>`).join("");
 
  document.getElementById("hullTitle").textContent=`${ship.hull.name} · ${ship.hull.trait}${ship.hull.extra!=="None"?" · "+ship.hull.extra:""}`;
