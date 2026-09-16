@@ -70,8 +70,14 @@ section{margin-top:14px}
  </div>
 </section>
 
+<section class="panel">
+ <div class="topline"><div><h2>Vessel Condition</h2><div id="conditionTitle" class="muted"></div></div></div>
+ <p id="conditionDescription" class="condition"></p>
+ <div id="activePenalties" class="grid3" style="margin-top:12px"></div>
+</section>
+
 <h2 style="margin-top:26px">Combat Dashboard</h2>
-<p class="muted">− damages or reduces. + repairs, restores, or enhances. HP may be increased above its original value.</p>
+<p class="muted">− damages or reduces. + repairs, restores, or enhances. HP may exceed base HP. Speed and Handling automatically include damage-threshold penalties; their +/- buttons adjust the underlying vessel stat.</p>
 <section id="dashboard" class="dashboard"></section>
 
 <section class="panel">
@@ -79,9 +85,17 @@ section{margin-top:14px}
  <div id="slotList" class="slotgrid"></div>
 </section>
 
+
+
 <section class="panel">
- <div class="topline"><div><h2>Vessel Condition</h2><div id="conditionTitle" class="muted"></div></div></div>
- <p id="conditionDescription" class="condition"></p>
+ <div class="topline"><div><h2>Repair Estimate</h2><p class="muted">Estimated cost to restore damaged components and replace/recruit missing crew to normal strength.</p></div></div>
+ <div id="repairSummary" class="grid3"></div>
+ <div style="overflow-x:auto;margin-top:12px">
+  <table>
+   <thead><tr><th>Component</th><th>Condition</th><th>Missing HP</th><th>Repair Cost</th></tr></thead>
+   <tbody id="repairRows"></tbody>
+  </table>
+ </div>
 </section>
 
 <section class="panel">
@@ -102,6 +116,17 @@ section{margin-top:14px}
 <section class="panel">
  <div class="topline"><h2>Weapons</h2><button data-reroll="weapons">Reroll Weapons</button></div>
  <div id="weaponList" class="grid3"></div>
+</section>
+
+<section class="panel">
+ <div class="topline"><div><h2>Crew & Ship Role</h2><p class="muted">Crew composition affects handling, attacks, weapon operation and damage control.</p></div></div>
+ <div id="crewRoleSummary" class="grid3"></div>
+ <div id="crewComposition" class="grid3" style="margin-top:12px"></div>
+</section>
+
+<section class="panel">
+ <div class="topline"><div><h2>Combat Attacks</h2><p class="muted">Ready-to-use attacks from ship weapons, bowmen, crossbowmen and rare shipboard magic.</p></div></div>
+ <div id="combatAttacks" class="grid3"></div>
 </section>
 
 <section class="panel">
@@ -126,46 +151,91 @@ const TYPES=[
  {name:"Galley",price:30000,slots:18,masts:[1,2],role:"Oared war vessel"}
 ];
 
+/* BALANCE: all physical component HP is 50% of the original table. Crew remains 1 HP per able sailor. */
 const HULLS=[
- {name:"Small wood",cost:100,slots:2,ac:10,hp:50,speed:5},
- {name:"Medium wood",cost:450,slots:5,ac:10,hp:80,speed:4},
- {name:"Big wood",cost:900,slots:8,ac:10,hp:100,speed:3},
- {name:"Small reinforced wood",cost:5000,slots:2,ac:13,hp:100,speed:5},
- {name:"Medium reinforced wood",cost:15000,slots:5,ac:13,hp:200,speed:4},
- {name:"Big reinforced wood",cost:20000,slots:8,ac:13,hp:300,speed:3},
- {name:"Small steel-reinforced wood",cost:24000,slots:4,ac:15,hp:400,speed:5},
- {name:"Medium steel-reinforced wood",cost:28000,slots:7,ac:15,hp:450,speed:4},
- {name:"Big steel-reinforced wood",cost:35000,slots:9,ac:15,hp:500,speed:3},
- {name:"Spacious",cost:30000,slots:14,ac:10,hp:350,speed:3}
+ {name:"Small wood",cost:100,slots:2,ac:10,hp:25,speed:5},
+ {name:"Medium wood",cost:450,slots:5,ac:10,hp:40,speed:4},
+ {name:"Big wood",cost:900,slots:8,ac:10,hp:50,speed:3},
+ {name:"Small reinforced wood",cost:5000,slots:2,ac:13,hp:50,speed:5},
+ {name:"Medium reinforced wood",cost:15000,slots:5,ac:13,hp:100,speed:4},
+ {name:"Big reinforced wood",cost:20000,slots:8,ac:13,hp:150,speed:3},
+ {name:"Small steel-reinforced wood",cost:24000,slots:4,ac:15,hp:200,speed:5},
+ {name:"Medium steel-reinforced wood",cost:28000,slots:7,ac:15,hp:225,speed:4},
+ {name:"Big steel-reinforced wood",cost:35000,slots:9,ac:15,hp:250,speed:3},
+ {name:"Spacious",cost:30000,slots:14,ac:10,hp:175,speed:3}
 ];
 
 const MASTS=[
- {name:"Jack Sparrow",speed:-1,hp:10,space:0,ac:5,cost:0},
- {name:"Poor",speed:0,hp:10,space:1,ac:10,cost:20},
- {name:"Normal",speed:1,hp:20,space:1,ac:10,cost:55},
- {name:"Good",speed:2,hp:30,space:2,ac:13,cost:85},
- {name:"Very Good",speed:3,hp:40,space:2,ac:13,cost:140},
- {name:"Extremely Good",speed:4,hp:50,space:3,ac:15,cost:300},
- {name:"Mastercraft",speed:7,hp:100,space:3,ac:15,cost:1000}
+ {name:"Jack Sparrow",speed:-1,hp:5,space:0,ac:5,cost:0},
+ {name:"Poor",speed:0,hp:5,space:1,ac:10,cost:20},
+ {name:"Normal",speed:1,hp:10,space:1,ac:10,cost:55},
+ {name:"Good",speed:2,hp:15,space:2,ac:13,cost:85},
+ {name:"Very Good",speed:3,hp:20,space:2,ac:13,cost:140},
+ {name:"Extremely Good",speed:4,hp:25,space:3,ac:15,cost:300},
+ {name:"Mastercraft",speed:7,hp:50,space:3,ac:15,cost:1000}
 ];
 
 const RUDDERS=[
- {name:"Bad",handling:-1,hp:10,space:1,ac:5,cost:0},
- {name:"Poor",handling:0,hp:10,space:1,ac:10,cost:20},
- {name:"Normal",handling:1,hp:20,space:2,ac:10,cost:55},
- {name:"Good",handling:2,hp:30,space:2,ac:13,cost:85},
- {name:"Very Good",handling:3,hp:40,space:3,ac:13,cost:140},
- {name:"Extremely Good",handling:4,hp:50,space:3,ac:15,cost:300},
- {name:"Mastercraft",handling:6,hp:100,space:4,ac:15,cost:1000}
+ {name:"Bad",handling:-1,hp:5,space:1,ac:5,cost:0},
+ {name:"Poor",handling:0,hp:5,space:1,ac:10,cost:20},
+ {name:"Normal",handling:1,hp:10,space:2,ac:10,cost:55},
+ {name:"Good",handling:2,hp:15,space:2,ac:13,cost:85},
+ {name:"Very Good",handling:3,hp:20,space:3,ac:13,cost:140},
+ {name:"Extremely Good",handling:4,hp:25,space:3,ac:15,cost:300},
+ {name:"Mastercraft",handling:6,hp:50,space:4,ac:15,cost:1000}
 ];
 
 const WEAPONS=[
- {name:"Light Ballista",hp:25,ac:15,space:1},
- {name:"Ballista",hp:50,ac:15,space:2},
- {name:"Mangonel",hp:100,ac:15,space:3},
- {name:"Heavy Ballista",hp:60,ac:16,space:2}
+ {name:"Scorpion",hp:10,ac:15,space:1,cost:180,attack:5,damage:"2d8",type:"piercing",range:"100/400 ft",crew:2,reload:"1 round"},
+ {name:"Light Ballista",hp:13,ac:15,space:1,cost:250,attack:5,damage:"2d10",type:"piercing",range:"120/480 ft",crew:2,reload:"1 round"},
+ {name:"Ballista",hp:25,ac:15,space:2,cost:500,attack:6,damage:"3d10",type:"piercing",range:"120/480 ft",crew:3,reload:"1 round"},
+ {name:"Heavy Ballista",hp:30,ac:16,space:2,cost:750,attack:6,damage:"4d10",type:"piercing",range:"150/600 ft",crew:4,reload:"1 round"},
+ {name:"Mangonel",hp:50,ac:15,space:3,cost:1000,attack:5,damage:"5d10",type:"bludgeoning",range:"200/800 ft",crew:5,reload:"2 rounds"},
+ {name:"Harpoon Launcher",hp:20,ac:15,space:2,cost:450,attack:5,damage:"3d8",type:"piercing",range:"100/400 ft",crew:3,reload:"1 round"},
+ {name:"Chain Ballista",hp:30,ac:15,space:2,cost:700,attack:5,damage:"2d10",type:"slashing",range:"100/400 ft",crew:4,reload:"1 round"},
+ {name:"Firepot Launcher",hp:20,ac:14,space:2,cost:600,attack:4,damage:"2d6",type:"fire",range:"80/320 ft",crew:3,reload:"1 round"},
+ {name:"Light Cannon",hp:25,ac:17,space:2,cost:900,attack:5,damage:"4d10",type:"bludgeoning",range:"300/1200 ft",crew:3,reload:"2 rounds",industrial:true},
+ {name:"Cannon",hp:38,ac:19,space:3,cost:1500,attack:6,damage:"6d10",type:"bludgeoning",range:"600/2400 ft",crew:4,reload:"2 rounds",industrial:true},
+ {name:"Heavy Cannon",hp:50,ac:19,space:4,cost:2500,attack:6,damage:"8d10",type:"bludgeoning",range:"600/2400 ft",crew:6,reload:"3 rounds",industrial:true}
 ];
 
+const SHIP_ROLES={
+ "Merchant":{weight:24,crew:.90,weapon:.55,archers:.20,marines:.10,mage:.015},
+ "Passenger":{weight:10,crew:.85,weapon:.35,archers:.15,marines:.12,mage:.025},
+ "Fishing":{weight:8,crew:.65,weapon:.15,archers:.08,marines:.02,mage:.005},
+ "Explorer":{weight:12,crew:.90,weapon:.55,archers:.20,marines:.15,mage:.06},
+ "Patrol":{weight:12,crew:1.05,weapon:1.00,archers:.30,marines:.22,mage:.07},
+ "Naval":{weight:10,crew:1.20,weapon:1.25,archers:.35,marines:.30,mage:.12},
+ "Privateer":{weight:9,crew:1.10,weapon:1.15,archers:.32,marines:.28,mage:.07},
+ "Smuggler":{weight:8,crew:.80,weapon:.65,archers:.22,marines:.15,mage:.025},
+ "Pirate":{weight:7,crew:1.05,weapon:1.05,archers:.35,marines:.32,mage:.035}
+};
+const CREW_QUALITIES={
+ "Green":{weight:12,handling:-1,attack:-1,repair:.85},
+ "Regular":{weight:48,handling:0,attack:0,repair:1},
+ "Experienced":{weight:25,handling:1,attack:1,repair:1.15},
+ "Veteran":{weight:12,handling:1,attack:2,repair:1.30},
+ "Elite":{weight:3,handling:2,attack:2,repair:1.50}
+};
+const MISSILE_CREW=[
+ {name:"Shortbowmen",die:"d6",attack:4,range:"80/320 ft",type:"piercing"},
+ {name:"Longbowmen",die:"d8",attack:5,range:"150/600 ft",type:"piercing"},
+ {name:"Light Crossbowmen",die:"d8",attack:4,range:"80/320 ft",type:"piercing"},
+ {name:"Heavy Crossbowmen",die:"d10",attack:5,range:"100/400 ft",type:"piercing"}
+];
+const MAGE_ROLES=[
+ {name:"Battle Mage",spells:["Fire Bolt — 2d10 fire","+ Shatter — 3d8 thunder","Magic Missile — 3 darts"]},
+ {name:"Weather Mage",spells:["Gust of Wind — control","Fog Cloud — concealment","Thunderwave — 2d8 thunder"]},
+ {name:"Ward Mage",spells:["Mage Armor — protection","Shield — reaction","Protection from Energy — ward"]},
+ {name:"Ship Healer",spells:["Cure Wounds — healing","Healing Word — healing","Lesser Restoration — recovery"]},
+ {name:"Navigator Mage",spells:["Gust — control","Fog Cloud — concealment","Detect Magic — utility"]}
+];
+
+function weightedKey(obj){
+ let total=Object.values(obj).reduce((s,v)=>s+v.weight,0),r=Math.random()*total;
+ for(const [k,v] of Object.entries(obj)){r-=v.weight;if(r<=0)return k}
+ return Object.keys(obj)[0];
+}
 const GOODS=[
  ["Grain",20],["Salt",100],["Timber",20],["Iron",100],["Copper",500],
  ["Ale",200],["Wine",400],["Linen",500],["Wool",250],["Dried Fish",80],
@@ -282,11 +352,11 @@ function createHull(){
  const trait=pick(["Standard","Standard","Standard","Lean","Sturdy","Long"]);
  const extra=Math.random()<.22?pick(["Oars","Mastercraft"]):"None";
  let h={...base,trait,extra};
- if(trait==="Lean"){h.speed+=3;h.ac=Math.max(1,h.ac-4);h.hp=Math.max(1,h.hp-6)}
- if(trait==="Sturdy"){h.hp+=10;h.ac+=3;h.speed=Math.max(.5,h.speed-.5)}
+ if(trait==="Lean"){h.speed+=3;h.ac=Math.max(1,h.ac-4);h.hp=Math.max(1,h.hp-3)}
+ if(trait==="Sturdy"){h.hp+=5;h.ac+=3;h.speed=Math.max(.5,h.speed-.5)}
  if(trait==="Long")h.slots+=3;
  if(extra==="Oars"){h.speed+=3;h.slots=Math.max(0,h.slots-2)}
- if(extra==="Mastercraft"){h.slots=Math.max(0,h.slots-1);h.ac+=1;h.speed+=1;h.hp+=100}
+ if(extra==="Mastercraft"){h.slots=Math.max(0,h.slots-1);h.ac+=1;h.speed+=1;h.hp+=50}
  return h;
 }
 
@@ -325,7 +395,21 @@ function makeShip(){
  const rudder=clone(weightedPick(RUDDERS));
  const allocation=allocateSpace(type,hull,masts,rudder);
  const crewMax=Math.max(3,mastCount*3+allocation.slots.Crew*5+allocation.slots.Weapons*2);
- const weapons=Array.from({length:allocation.slots.Weapons},()=>clone(pick(WEAPONS)));
+
+ const role=weightedKey(SHIP_ROLES), roleCfg=SHIP_ROLES[role];
+ const quality=weightedKey(CREW_QUALITIES), qualityCfg=CREW_QUALITIES[quality];
+ const adjustedCrew=Math.max(3,Math.round(crewMax*roleCfg.crew));
+ const captain=1;
+ const officers=adjustedCrew>=12?Math.max(1,Math.floor(adjustedCrew/12)):0;
+ const gunnerTarget=Math.min(Math.floor(adjustedCrew*.28),Math.max(0,allocation.slots.Weapons*3));
+ const missileCount=Math.max(0,Math.round(adjustedCrew*roleCfg.archers*(.55+Math.random()*.7)));
+ const marineCount=Math.max(0,Math.round(adjustedCrew*roleCfg.marines*(.5+Math.random())));
+ const hasMage=Math.random()<roleCfg.mage;
+ const mage=hasMage?pick(MAGE_ROLES):null;
+ const reserved=captain+officers+gunnerTarget+missileCount+marineCount+(hasMage?1:0);
+ const sailors=Math.max(1,adjustedCrew-reserved);
+ const missileType=missileCount?pick(MISSILE_CREW):null;
+ const weapons=Array.from({length:allocation.slots.Weapons},()=>clone(pick(WEAPONS.filter(w=>!w.industrial || ["Naval","Patrol","Privateer"].includes(role) || Math.random()<.12))));
  const speed=Math.max(.5,hull.speed+masts.reduce((s,m)=>s+m.speed,0)/Math.max(1,masts.length));
  const handling=rudder.handling;
  const cargo=makeCargo(allocation.slots.Cargo);
@@ -333,8 +417,9 @@ function makeShip(){
  ship={
   name:randomName(),type,hull,masts,rudder,weapons,cargo,
   slots:allocation.slots,capacity:allocation.capacity,structural:allocation.structural,
-  base:{hull:hull.hp,masts:masts.map(m=>m.hp),rudder:rudder.hp,crew:crewMax,weapons:weapons.map(w=>w.hp),speed,handling,space:allocation.capacity},
-  current:{hull:hull.hp,masts:masts.map(m=>m.hp),rudder:rudder.hp,crew:crewMax,weapons:weapons.map(w=>w.hp),speed,handling,space:allocation.capacity},
+  role,quality,qualityCfg,crewProfile:{captain,officers,sailors,gunners:gunnerTarget,marines:marineCount,missileCount,missileType,mage},
+  base:{hull:hull.hp,masts:masts.map(m=>m.hp),rudder:rudder.hp,crew:adjustedCrew,weapons:weapons.map(w=>w.hp),speed,handling,space:allocation.capacity},
+  current:{hull:hull.hp,masts:masts.map(m=>m.hp),rudder:rudder.hp,crew:adjustedCrew,weapons:weapons.map(w=>w.hp),speed,handling,space:allocation.capacity},
   startingCondition:"Intact",damageDescription:""
  };
  applyStartingDamage();
@@ -344,6 +429,148 @@ function makeShip(){
 function totalHP(which="current"){
  const x=ship[which];
  return x.hull+x.rudder+x.crew+x.masts.reduce((a,b)=>a+b,0)+x.weapons.reduce((a,b)=>a+b,0);
+}
+
+function hpRatio(current,base){
+ return base>0 ? current/base : 1;
+}
+
+/*
+ DAMAGE THRESHOLDS
+ These are evaluated from live HP every time render() runs, so they apply
+ equally to generated damage and manual +/- adjustments.
+
+ Hull:
+   below 50% -> Speed -1
+   below 25% -> Speed -2 total, Handling -1
+   0 HP      -> Speed 0, Handling -4 (disabled / sinking)
+
+ Each mast/sail:
+   below 60% -> Speed -2
+   below 30% -> Speed -4 total
+   0 HP      -> loses that mast's normal speed contribution as well
+
+ Rudder:
+   below 50% -> Handling -2
+   below 25% -> Handling -4 total
+   0 HP      -> Handling -6 total
+
+ Crew:
+   below 50% -> Handling -1 and Speed -1
+   below 25% -> Handling -2 and Speed -2 total
+
+ Weapons:
+   below 50% -> Damaged
+   below 25% -> Critical
+   0 HP      -> Disabled
+*/
+function damageEffects(){
+ let speedPenalty=0, handlingPenalty=0, notes=[];
+
+ const hullR=hpRatio(ship.current.hull,ship.base.hull);
+ if(ship.current.hull<=0){
+  notes.push("Hull 0% — vessel disabled / sinking.");
+  return {speedPenalty:ship.base.speed,handlingPenalty:6,notes,forceSpeedZero:true};
+ }else if(hullR<.25){
+  speedPenalty+=2; handlingPenalty+=1;
+  notes.push("Hull below 25% — Speed −2, Handling −1.");
+ }else if(hullR<.50){
+  speedPenalty+=1;
+  notes.push("Hull below 50% — Speed −1.");
+ }
+
+ ship.current.masts.forEach((hp,i)=>{
+  const r=hpRatio(hp,ship.base.masts[i]);
+  if(hp<=0){
+   const lost=Math.max(0,ship.masts[i].speed);
+   speedPenalty+=lost;
+   notes.push(`Mast ${i+1} destroyed — loses its ${lost} Speed contribution.`);
+  }else if(r<.30){
+   speedPenalty+=4;
+   notes.push(`Mast ${i+1} below 30% — Speed −4.`);
+  }else if(r<.60){
+   speedPenalty+=2;
+   notes.push(`Mast ${i+1} below 60% — Speed −2.`);
+  }
+ });
+
+ const rudderR=hpRatio(ship.current.rudder,ship.base.rudder);
+ if(ship.current.rudder<=0){
+  handlingPenalty+=6;
+  notes.push("Rudder destroyed — Handling −6.");
+ }else if(rudderR<.25){
+  handlingPenalty+=4;
+  notes.push("Rudder below 25% — Handling −4.");
+ }else if(rudderR<.50){
+  handlingPenalty+=2;
+  notes.push("Rudder below 50% — Handling −2.");
+ }
+
+ const crewR=hpRatio(ship.current.crew,ship.base.crew);
+ if(crewR<.25){
+  speedPenalty+=2; handlingPenalty+=2;
+  notes.push("Crew below 25% — Speed −2, Handling −2.");
+ }else if(crewR<.50){
+  speedPenalty+=1; handlingPenalty+=1;
+  notes.push("Crew below 50% — Speed −1, Handling −1.");
+ }
+
+ ship.current.weapons.forEach((hp,i)=>{
+  const r=hpRatio(hp,ship.base.weapons[i]);
+  if(hp<=0) notes.push(`Weapon ${i+1} destroyed — unusable.`);
+  else if(r<.25) notes.push(`Weapon ${i+1} below 25% — critically damaged.`);
+  else if(r<.50) notes.push(`Weapon ${i+1} below 50% — damaged.`);
+ });
+
+ return {speedPenalty,handlingPenalty,notes,forceSpeedZero:false};
+}
+
+function effectiveStats(){
+ const fx=damageEffects();
+ return {
+  speed: fx.forceSpeedZero ? 0 : Math.max(0,ship.current.speed-fx.speedPenalty),
+  handling: ship.current.handling-fx.handlingPenalty+(ship.qualityCfg?.handling||0),
+  effects:fx
+ };
+}
+
+/*
+ REPAIRS
+ Repair price is proportional to missing HP, but field repairs cost 60%
+ of the lost component value rather than the full replacement value.
+ HP above base maximum is an enhancement and creates no repair credit.
+ Crew recovery is included separately at 2 gp per missing able sailor.
+*/
+function repairData(){
+ const rows=[];
+ const add=(name,current,base,cost)=>{
+  const missing=Math.max(0,base-Math.min(current,base));
+  const condition=base>0?Math.max(0,Math.min(100,current/base*100)):100;
+  const lostValue=base>0?cost*(missing/base):0;
+  const repairCost=lostValue*.60;
+  rows.push({name,current,base,missing,condition,cost,repairCost});
+ };
+
+ add("Hull",ship.current.hull,ship.base.hull,ship.hull.cost);
+ ship.masts.forEach((m,i)=>add(`Mast ${i+1} — ${m.name}`,ship.current.masts[i],ship.base.masts[i],m.cost));
+ add(`Rudder — ${ship.rudder.name}`,ship.current.rudder,ship.base.rudder,ship.rudder.cost);
+ ship.weapons.forEach((w,i)=>add(`Weapon ${i+1} — ${w.name}`,ship.current.weapons[i],ship.base.weapons[i],w.cost||0));
+
+ // Crew recovery/replacement: each missing able sailor costs 2 gp to replace/recruit.
+ // Crew uses a direct per-person cost rather than the 60% physical-component repair formula.
+ const missingCrew=Math.max(0,ship.base.crew-Math.min(ship.current.crew,ship.base.crew));
+ const crewCondition=ship.base.crew>0?Math.max(0,Math.min(100,ship.current.crew/ship.base.crew*100)):100;
+ rows.push({
+  name:"Crew — replacement / recruitment",
+  current:ship.current.crew,
+  base:ship.base.crew,
+  missing:missingCrew,
+  condition:crewCondition,
+  cost:ship.base.crew*2,
+  repairCost:missingCrew*2
+ });
+
+ return rows;
 }
 
 function damageParts(){
@@ -421,8 +648,66 @@ function tracker(key,label,value,base,index=null,showBase=true){
 }
 function fmt(n){return Number.isInteger(n)?n:n.toFixed(1)}
 
+function availableCrewFactor(){
+ return ship.base.crew>0?Math.max(0,Math.min(1,ship.current.crew/ship.base.crew)):1;
+}
+function activeSpecialists(baseCount){
+ return Math.max(0,Math.min(baseCount,Math.floor(baseCount*availableCrewFactor())));
+}
+function weaponCrewStatus(w){
+ const assigned=Math.min(w.crew,activeSpecialists(w.crew));
+ if(assigned<=0)return {assigned,penalty:99,text:"Cannot operate"};
+ if(assigned>=w.crew)return {assigned,penalty:0,text:"Fully crewed"};
+ if(assigned===1)return {assigned,penalty:-4,text:"Severely understaffed"};
+ return {assigned,penalty:-2,text:"Understaffed"};
+}
+function renderCrewCombat(){
+ const p=ship.crewProfile,q=ship.qualityCfg||{handling:0,attack:0,repair:1};
+ const factor=availableCrewFactor();
+ const alive=n=>Math.max(0,Math.min(n,Math.floor(n*factor)));
+
+ document.getElementById("crewRoleSummary").innerHTML=
+  `<div class="stat"><span class="muted">Ship Role</span><br><b>${ship.role}</b></div>`+
+  `<div class="stat"><span class="muted">Crew Quality</span><br><b>${ship.quality}</b><br><span class="muted">Handling ${q.handling>=0?"+":""}${q.handling}, Attack ${q.attack>=0?"+":""}${q.attack}</span></div>`+
+  `<div class="stat"><span class="muted">Able Crew</span><br><b>${ship.current.crew} / ${ship.base.crew}</b></div>`;
+
+ const parts=[
+  ["Captain",p.captain],["Officers",p.officers],["Sailors",p.sailors],
+  ["Gunners",p.gunners],["Marines",p.marines],
+  [p.missileType?p.missileType.name:"Missile Troops",p.missileCount],
+  [p.mage?p.mage.name:"Ship Mage",p.mage?1:0]
+ ].filter(x=>x[1]>0);
+ document.getElementById("crewComposition").innerHTML=parts.map(([n,v])=>
+  `<div class="stat"><span class="muted">${n}</span><br><b>${alive(v)} / ${v}</b></div>`).join("");
+
+ let cards=[];
+ ship.weapons.forEach((w,i)=>{
+  const hp=ship.current.weapons[i], ratio=hpRatio(hp,ship.base.weapons[i]), cs=weaponCrewStatus(w);
+  let disabled=hp<=0||cs.assigned<=0;
+  let dmgPenalty=ratio<.25?-4:ratio<.5?-2:0;
+  let atk=w.attack+(q.attack||0)+cs.penalty+dmgPenalty;
+  cards.push(`<div class="stat"><b>${w.name}</b><br>`+
+   (disabled?`<strong>UNUSABLE</strong>`:`Attack <strong>${atk>=0?"+":""}${atk}</strong> · Damage <strong>${w.damage} ${w.type}</strong>`)+
+   `<br><span class="muted">Range ${w.range} · Crew ${cs.assigned}/${w.crew} · ${cs.text}<br>HP ${hp}/${ship.base.weapons[i]} · Reload ${w.reload}</span></div>`);
+ });
+
+ if(p.missileType&&p.missileCount){
+  const n=alive(p.missileCount),m=p.missileType;
+  cards.push(`<div class="stat"><b>${m.name} Volley</b><br>`+
+   (n?`Attack <strong>+${m.attack+(q.attack||0)}</strong> · Damage <strong>${n}${m.die} ${m.type}</strong>`:`<strong>UNAVAILABLE</strong>`)+
+   `<br><span class="muted">${n}/${p.missileCount} able · Range ${m.range}</span></div>`);
+ }
+ if(p.mage){
+  const active=alive(1)>0;
+  cards.push(`<div class="stat"><b>${p.mage.name}</b><br>${active?p.mage.spells.join("<br>"):"<strong>INCAPACITATED</strong>"}<br><span class="muted">Rare specialist</span></div>`);
+ }
+ document.getElementById("combatAttacks").innerHTML=cards.length?cards.join(""):`<div class="stat">No dedicated combat attacks generated.</div>`;
+}
+
 function render(){
  if(!ship)return;
+ const effective=effectiveStats();
+ const repairs=repairData();
  document.getElementById("shipName").textContent=ship.name;
  document.getElementById("shipDesc").textContent=`${ship.type.name} · ${ship.hull.name} · ${ship.type.role}`;
  document.getElementById("conditionBadge").textContent=ship.startingCondition;
@@ -440,12 +725,29 @@ function render(){
  ship.current.masts.forEach((v,i)=>d+=tracker("masts",`MAST ${i+1} HP`,v,ship.base.masts[i],i));
  d+=tracker("rudder","RUDDER HP",ship.current.rudder,ship.base.rudder);
  d+=tracker("crew","CREW HP",ship.current.crew,ship.base.crew);
- d+=tracker("speed","SPEED",ship.current.speed,ship.base.speed,null,false);
- d+=tracker("handling","HANDLING",ship.current.handling,ship.base.handling,null,false);
+ d+=tracker("speed","SPEED",effective.speed,ship.current.speed,null,false);
+ d+=tracker("handling","HANDLING",effective.handling,ship.current.handling,null,false);
  d+=tracker("space","USABLE SPACE",ship.current.space,ship.base.space,null,false);
  ship.current.weapons.forEach((v,i)=>d+=tracker("weapons",`WEAPON ${i+1} HP`,v,ship.base.weapons[i],i));
  document.getElementById("dashboard").innerHTML=d;
 
+ const penaltyBox=document.getElementById("activePenalties");
+ penaltyBox.innerHTML=effective.effects.notes.length
+  ? effective.effects.notes.map(n=>`<div class="stat"><b>Active Damage Effect</b><br><span class="muted">${n}</span></div>`).join("")
+  : `<div class="stat"><b>No active penalties</b><br><span class="muted">Damage has not crossed a mechanical threshold.</span></div>`;
+
+ const repairTotal=repairs.reduce((s,r)=>s+r.repairCost,0);
+ const missingTotal=repairs.reduce((s,r)=>s+r.missing,0);
+ const damagedCount=repairs.filter(r=>r.missing>0).length;
+ document.getElementById("repairSummary").innerHTML=
+  `<div class="stat"><span class="muted">Damaged Components</span><br><b>${damagedCount}</b></div>`+
+  `<div class="stat"><span class="muted">HP / Crew Missing</span><br><b>${missingTotal}</b></div>`+
+  `<div class="stat"><span class="muted">Estimated Full Repair</span><br><b>${gp(repairTotal)}</b></div>`;
+ document.getElementById("repairRows").innerHTML=repairs.filter(r=>r.missing>0).length
+  ? repairs.filter(r=>r.missing>0).map(r=>`<tr><td>${r.name}</td><td>${Math.round(r.condition)}%</td><td>${r.missing}</td><td>${gp(r.repairCost)}</td></tr>`).join("")
+  : `<tr><td colspan="4">No physical repairs required.</td></tr>`;
+
+ renderCrewCombat();
  document.getElementById("slotList").innerHTML=Object.entries(ship.slots).map(([k,v])=>`<div class="stat slot"><span class="muted">${k}</span><br><b>${v}</b></div>`).join("");
 
  document.getElementById("hullTitle").textContent=`${ship.hull.name} · ${ship.hull.trait}${ship.hull.extra!=="None"?" · "+ship.hull.extra:""}`;
@@ -461,7 +763,7 @@ function render(){
  document.getElementById("rudderInfo").innerHTML=`<h3>${r.name}</h3><p>HP <b>${ship.current.rudder} / ${ship.base.rudder}</b> · AC <b>${r.ac}</b></p><p>Handling <b>${r.handling>=0?"+":""}${r.handling}</b> · Space <b>${r.space}</b> · Cost <b>${gp(r.cost)}</b></p>`;
  document.getElementById("crewInfo").innerHTML=`<h3>${ship.base.crew} intended sailors</h3><p>Current able crew: <b>${ship.current.crew} / ${ship.base.crew}</b></p><p class="muted">Crew HP represents sailors still able to operate the vessel.</p>`;
 
- document.getElementById("weaponList").innerHTML=ship.weapons.length?ship.weapons.map((w,i)=>`<div class="stat"><b>${w.name}</b><br>HP ${ship.current.weapons[i]} / ${ship.base.weapons[i]}<br>AC ${w.ac}<br>Space ${w.space}</div>`).join(""):`<p class="muted">This vessel carries no generated siege weapons.</p>`;
+ document.getElementById("weaponList").innerHTML=ship.weapons.length?ship.weapons.map((w,i)=>`<div class="stat"><b>${w.name}</b><br>HP ${ship.current.weapons[i]} / ${ship.base.weapons[i]}<br>AC ${w.ac}<br>Space ${w.space}<br>Value ${gp(w.cost||0)}<br>Attack +${w.attack} · Damage ${w.damage} ${w.type}<br>Range ${w.range} · Crew ${w.crew} · Reload ${w.reload}</div>`).join(""):`<p class="muted">This vessel carries no generated siege weapons.</p>`;
 
  const tons=ship.slots.Cargo*5;
  document.getElementById("cargoCap").textContent=`${ship.slots.Cargo} cargo slots · up to ${tons} tons`;
@@ -483,6 +785,10 @@ function bindTrackers(){
   }else{
    ship.current[key]=Math.max(0,ship.current[key]+delta);
   }
+  if(["hull","masts","rudder","crew","weapons","total"].includes(key)){
+   buildDamageDescription();
+   ship.startingCondition=damageParts().some(p=>p.get()<p.base) ? "Damaged — current condition" : "Intact";
+  }
   render();
  });
 }
@@ -490,9 +796,23 @@ function bindTrackers(){
 function rebuildDependent(){
  const a=allocateSpace(ship.type,ship.hull,ship.masts,ship.rudder);
  ship.slots=a.slots;ship.capacity=a.capacity;ship.structural=a.structural;
- const crew=Math.max(3,ship.masts.length*3+ship.slots.Crew*5+ship.slots.Weapons*2);
- ship.weapons=Array.from({length:ship.slots.Weapons},()=>clone(pick(WEAPONS)));
+ const rawCrew=Math.max(3,ship.masts.length*3+ship.slots.Crew*5+ship.slots.Weapons*2);
+ const roleCfg=SHIP_ROLES[ship.role]||SHIP_ROLES.Merchant;
+ const crew=Math.max(3,Math.round(rawCrew*roleCfg.crew));
+ ship.weapons=Array.from({length:ship.slots.Weapons},()=>clone(pick(WEAPONS.filter(w=>!w.industrial || ["Naval","Patrol","Privateer"].includes(ship.role) || Math.random()<.12))));
  ship.cargo=makeCargo(ship.slots.Cargo);
+
+ const captain=1;
+ const officers=crew>=12?Math.max(1,Math.floor(crew/12)):0;
+ const gunners=Math.min(Math.floor(crew*.28),Math.max(0,ship.slots.Weapons*3));
+ const missileCount=Math.max(0,Math.round(crew*roleCfg.archers*(.55+Math.random()*.7)));
+ const marines=Math.max(0,Math.round(crew*roleCfg.marines*(.5+Math.random())));
+ const mage=Math.random()<roleCfg.mage?pick(MAGE_ROLES):null;
+ const reserved=captain+officers+gunners+missileCount+marines+(mage?1:0);
+ const sailors=Math.max(1,crew-reserved);
+ ship.crewProfile={captain,officers,sailors,gunners,marines,missileCount,
+   missileType:missileCount?pick(MISSILE_CREW):null,mage};
+
  ship.base.crew=crew;ship.current.crew=crew;
  ship.base.weapons=ship.weapons.map(w=>w.hp);ship.current.weapons=[...ship.base.weapons];
  ship.base.space=a.capacity;ship.current.space=a.capacity;
@@ -524,7 +844,7 @@ document.querySelectorAll("[data-reroll]").forEach(btn=>btn.onclick=()=>{
   const ideal=Math.max(3,ship.masts.length*3+ship.slots.Crew*5+ship.slots.Weapons*2);
   ship.base.crew=ideal;ship.current.crew=ideal;
  }else if(what==="weapons"){
-  ship.weapons=Array.from({length:ship.slots.Weapons},()=>clone(pick(WEAPONS)));
+  ship.weapons=Array.from({length:ship.slots.Weapons},()=>clone(pick(WEAPONS.filter(w=>!w.industrial || ["Naval","Patrol","Privateer"].includes(ship.role) || Math.random()<.12))));
   ship.base.weapons=ship.weapons.map(w=>w.hp);ship.current.weapons=[...ship.base.weapons];
  }else if(what==="cargo"){
   ship.cargo=makeCargo(ship.slots.Cargo);
