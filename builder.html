@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shipwright's Yard</title><link rel="stylesheet" href="css/ships.css"></head>
+<body><main>
+<div class="shopbar"><div class="shopstats">
+ <div class="shopstat"><span>STARTING BUDGET</span><b id="budgetTop">0 gp</b></div>
+ <div class="shopstat"><span>SPENT</span><b id="spentTop">0 gp</b></div>
+ <div class="shopstat"><span>REMAINING</span><b id="remainTop">0 gp</b></div>
+ <div class="shopstat"><span>SPACE</span><b id="spaceTop">—</b></div>
+</div></div>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+ <div><div class="muted">SHIPYARD</div><h1 id="yardTitle">The Shipwright's Yard</h1></div>
+ <a class="button" href="index.html">Back to Start</a>
+</div>
+<div class="steps" id="steps"></div>
+<section class="panel" id="stage"></section>
+</main>
+<script src="js/ship-data.js"></script>
+<script>
+"use strict";
+const stages=["Shipyard","Budget","Ship Type","Hull","Hull Design","Masts","Rudder","Review"];
+let step=0;
+let B={shipyard:"The Shipwright\'s Yard",budget:0,type:null,hull:null,trait:null,extra:null,masts:[],rudder:null};
+
+const gp=n=>Math.round(n).toLocaleString("en-US")+" gp";
+const YARD_A=["Anchor","Iron","Golden","Storm","Salt","Black","Silver","Wayward","Crowned","Old","North","Red","White","Oak","Deepwater","Westwind","Seafarer's","King's","Mariner's","Tide"];
+const YARD_B=["& Hammer","& Compass","& Keel","& Sail","Shipworks","Shipwrights","Drydock","Dockyard","Marine Works","Yard","Wharf","Harbour Works","Boatworks","Foundry","Quay"];
+function randomYardName(){
+ const a=YARD_A[Math.floor(Math.random()*YARD_A.length)];
+ const b=YARD_B[Math.floor(Math.random()*YARD_B.length)];
+ return `${a} ${b}`;
+}
+function setYardName(v){
+ B.shipyard=(v||"").trim()||"Unnamed Shipyard";
+ document.getElementById("yardTitle").textContent=B.shipyard;
+}
+function generateYardName(){
+ B.shipyard=randomYardName();
+ render();
+}
+
+function spent(){
+ return (B.type?.price||0)+(B.hull?.cost||0)+(B.trait?.cost||0)+(B.extra?.cost||0)+
+ B.masts.reduce((s,x)=>s+x.cost,0)+(B.rudder?.cost||0);
+}
+function remaining(){return B.budget-spent()}
+function capacity(){
+ if(!B.type&&!B.hull)return 0;
+ let n=Math.max(B.type?.slots||0,B.hull?.slots||0);
+ if(B.trait?.name==="Long")n+=3;
+ if(B.extra?.name==="Mastercraft")n-=1;
+ return Math.max(0,n);
+}
+function usedSpace(){
+ return B.masts.reduce((s,x)=>s+x.space,0)+(B.rudder?.space||0)+(B.extra?.name==="Oars"?2:0);
+}
+function updateTop(){
+ document.getElementById("budgetTop").textContent=gp(B.budget);
+ document.getElementById("spentTop").textContent=gp(spent());
+ const rem=document.getElementById("remainTop"); rem.textContent=gp(remaining());
+ rem.style.color=remaining()<0?"#ff8f82":"";
+ document.getElementById("spaceTop").textContent=(B.type||B.hull)?`${usedSpace()} / ${capacity()}`:"—";
+ document.getElementById("steps").innerHTML=stages.map((s,i)=>`<span class="step ${i===step?"active":i<step?"done":""}">${i+1}. ${s}</span>`).join("");
+}
+function nav(canNext=true){
+ return `<div class="actions">${step?'<button onclick="back()">← Back</button>':'<span></span>'}
+ ${step<stages.length-1?`<button class="primary" ${canNext?"":"disabled"} onclick="next()">Continue →</button>`:""}</div>`;
+}
+function back(){step=Math.max(0,step-1);render()}
+function next(){
+ if(step===0&&!B.shipyard)return;
+ if(step===1&&B.budget<=0)return;
+ if(step===2&&!B.type)return;if(step===3&&!B.hull)return;
+ if(step===4&&(!B.trait||!B.extra))return;
+ if(step===5&&B.masts.length!==(B.type?.masts[0]||0) && B.type?.masts[0]===B.type?.masts[1])return;
+ if(step===6&&!B.rudder)return;
+ step=Math.min(stages.length-1,step+1);render();
+}
+function affordable(cost, replacing=0){return remaining()+replacing>=cost}
+function choiceCards(items,selected,fn,detail){
+ return `<div class="grid">${items.map((x,i)=>{
+  const itemPrice=x.cost??x.price??0;
+  const repl=selected?(selected.cost??selected.price??0):0;
+  const dis=!affordable(itemPrice,repl);
+  return `<div class="choice ${selected===x?"selected":""} ${dis?"disabled":""}" onclick="${dis?"":fn+"("+i+")"}">
+   <h3>${x.name}</h3><div class="price">${gp(x.cost??x.price)}</div>${detail(x)}
+   ${dis?`<p class="muted">Need ${gp(itemPrice-(remaining()+repl))} more</p>`:""}
+  </div>`}).join("")}</div>`;
+}
+function setType(i){B.type=SHIP_DATA.types[i];B.masts=[];render()}
+function setHull(i){B.hull=SHIP_DATA.hulls[i];render()}
+function setTrait(i){B.trait=SHIP_DATA.hullTraits[i];render()}
+function setExtra(i){B.extra=SHIP_DATA.extras[i];render()}
+function setRudder(i){B.rudder=SHIP_DATA.rudders[i];render()}
+function setBudget(){
+ B.budget=Math.max(0,Number(document.getElementById("budgetInput").value)||0);updateTop();
+}
+function addMast(i){
+ const m=SHIP_DATA.masts[i],max=B.type.masts[1];
+ if(B.masts.length>=max||!affordable(m.cost)||usedSpace()+m.space>capacity())return;
+ B.masts.push(m);render();
+}
+function removeMast(i){B.masts.splice(i,1);render()}
+function render(){
+ updateTop();const s=document.getElementById("stage");
+ document.getElementById("yardTitle").textContent=B.shipyard;
+ if(step===0){
+  s.innerHTML=`<h2>Name Your Shipyard</h2>
+  <p class="muted">Use a generated shipyard name or enter your own. The name will appear on the finished vessel paperwork.</p>
+  <div class="summary">
+   <div><label class="muted">SHIPYARD NAME</label>
+    <input id="yardInput" type="text" value="${B.shipyard.replaceAll('"',"&quot;")}" oninput="setYardName(this.value)">
+    <div style="margin-top:10px"><button onclick="generateYardName()">Generate Shipyard Name</button></div>
+   </div>
+   <div class="notice"><b>${B.shipyard}</b><br><span class="muted">Shipwrights, repairs, outfitting and commissioned vessels.</span></div>
+  </div>${nav(!!B.shipyard)}`;
+ }else if(step===1){
+  s.innerHTML=`<h2>Set Your Budget</h2><p class="muted">How much gold is available for this ship?</p>
+  <input id="budgetInput" type="number" min="0" step="100" value="${B.budget||35000}" oninput="setBudget()">
+  <div class="notice">Your remaining budget stays visible at the top throughout the purchase.</div>${nav(B.budget>0)}`;
+ }else if(step===2){
+  s.innerHTML=`<h2>Choose Ship Type</h2><p class="muted">The vessel itself is the first major purchase.</p>`+
+  choiceCards(SHIP_DATA.types,B.type,"setType",x=>`<p>${x.role}</p><p class="muted">Base space ${x.slots} · Masts ${x.masts[0]}${x.masts[1]!==x.masts[0]?"–"+x.masts[1]:""}</p>`)
+  +nav(!!B.type);
+ }else if(step===3){
+  s.innerHTML=`<h2>Choose Hull</h2><p class="muted">Select the hull construction for your vessel.</p>`+
+  choiceCards(SHIP_DATA.hulls,B.hull,"setHull",x=>`<p class="muted">HP ${x.hp} · AC ${x.ac} · Speed ${x.speed} · Space ${x.slots}</p>`)
+  +nav(!!B.hull);
+ }else if(step===4){
+  s.innerHTML=`<h2>Hull Design & Construction Upgrades</h2><p class="muted">Lean, Sturdy and Long must be chosen during construction.</p>
+  <h3>Hull Design</h3>`+
+  choiceCards(SHIP_DATA.hullTraits,B.trait,"setTrait",x=>`<p class="muted">${x.description}</p>`)+
+  `<h3 style="margin-top:20px">Additional Option</h3>`+
+  choiceCards(SHIP_DATA.extras,B.extra,"setExtra",x=>`<p class="muted">${x.description}</p>`)+nav(!!B.trait&&!!B.extra);
+ }else if(step===5){
+  const min=B.type.masts[0],max=B.type.masts[1],valid=B.masts.length>=min&&B.masts.length<=max;
+  s.innerHTML=`<h2>Purchase Masts</h2><p class="muted">${B.type.name} requires ${min}${max!==min?"–"+max:""} mast${max===1?"":"s"}. Click a mast quality to add one.</p>
+  <div class="notice"><b>Installed:</b> ${B.masts.length}/${max} · ${B.masts.map((m,i)=>`${m.name} <button onclick="removeMast(${i})">×</button>`).join(" · ")||"None"}</div>
+  <div class="grid">${SHIP_DATA.masts.map((m,i)=>{
+   const dis=B.masts.length>=max||!affordable(m.cost)||usedSpace()+m.space>capacity();
+   return `<div class="choice ${dis?"disabled":""}" onclick="${dis?"":"addMast("+i+")"}"><h3>${m.name}</h3><div class="price">${gp(m.cost)}</div>
+   <p class="muted">HP ${m.hp} · AC ${m.ac} · Speed ${m.speed>=0?"+":""}${m.speed} · Space ${m.space}</p></div>`}).join("")}</div>${nav(valid)}`;
+ }else if(step===6){
+  s.innerHTML=`<h2>Choose Rudder / Helm</h2>`+
+  choiceCards(SHIP_DATA.rudders,B.rudder,"setRudder",x=>`<p class="muted">HP ${x.hp} · AC ${x.ac} · Handling ${x.handling>=0?"+":""}${x.handling} · Space ${x.space}</p>`)
+  +nav(!!B.rudder);
+ }else{
+  const mastCost=B.masts.reduce((s,x)=>s+x.cost,0);
+  s.innerHTML=`<h2>Vessel Order Review</h2><p class="muted">Prepared by <b>${B.shipyard}</b></p>
+  <div class="summary"><div>
+   <div class="line"><span>Ship Type</span><b>${B.type?.name||"—"} · ${gp(B.type?.price||0)}</b></div>
+   <div class="line"><span>Hull</span><b>${B.hull?.name||"—"} · ${gp(B.hull?.cost||0)}</b></div>
+   <div class="line"><span>Hull Design</span><b>${B.trait?.name||"—"} · ${gp(B.trait?.cost||0)}</b></div>
+   <div class="line"><span>Extra</span><b>${B.extra?.name||"—"} · ${gp(B.extra?.cost||0)}</b></div>
+   <div class="line"><span>Masts</span><b>${B.masts.length} · ${gp(mastCost)}</b></div>
+   <div class="line"><span>Rudder</span><b>${B.rudder?.name||"—"} · ${gp(B.rudder?.cost||0)}</b></div>
+  </div><div>
+   <div class="art"><div>SHIP ART<br><span class="muted">Will use the same modular art library as Generator</span></div></div>
+   <p><b>Spent:</b> ${gp(spent())}<br><b>Remaining:</b> ${gp(remaining())}<br><b>Structural Space:</b> ${usedSpace()} / ${capacity()}</p>
+  </div></div>
+  <div class="notice">Review the vessel order before printing or continuing outfitting.</div>
+  <div class="actions"><button onclick="back()">← Back</button><button onclick="window.print()">Print Vessel Order</button></div>`;
+ }
+ updateTop();
+}
+B.budget=35000;render();
+</script></body></html>
