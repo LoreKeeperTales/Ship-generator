@@ -39,6 +39,39 @@ function generateYardName(){
  render();
 }
 
+function artSlug(v){return String(v||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+const SHIP_ART_LAYOUT={
+ Sloop:{masts:[48],rudder:{x:91,y:55}},
+ Clipper:{masts:[30,50,70],rudder:{x:91,y:55}},
+ Schooner:{masts:[38,59,76],rudder:{x:91,y:55}},
+ Brigantine:{masts:[40,66],rudder:{x:91,y:55}},
+ Brig:{masts:[40,66],rudder:{x:91,y:55}},
+ Corvette:{masts:[37,59,76],rudder:{x:91,y:55}},
+ Frigate:{masts:[30,50,70],rudder:{x:91,y:55}},
+ Galley:{masts:[48,68],rudder:{x:91,y:55}}
+};
+function artImg(src,cls,alt,fallbackSrc=""){
+ const fb=fallbackSrc?` onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='${fallbackSrc}'}else{this.classList.add('art-missing')}"`:` onerror="this.classList.add('art-missing')"`;
+ return `<img class="${cls}" src="${src}" alt="${alt}"${fb}>`;
+}
+function compositeShipArt(type,masts,rudder,compact=false){
+ const layout=SHIP_ART_LAYOUT[type.name]||{masts:[35,55,75],rudder:{x:91,y:55}};
+ const hullSlug=artSlug(type.name);
+ let html=`<div class="ship-composite ${compact?'compact':''}">`+
+  artImg(`images/hulls/${hullSlug}.png`,`layer hull-layer`,`${type.name} hull`,`images/ships/${hullSlug}.png`);
+ masts.forEach((m,i)=>{
+   const x=layout.masts[i]??layout.masts[layout.masts.length-1]??50;
+   html+=`<div class="mast-anchor" style="left:${x}%">${artImg(`images/masts/${artSlug(m.name)}.png`,`mast-layer`,`${m.name} mast`)}</div>`;
+ });
+ if(rudder){const a=layout.rudder||{x:91,y:55};html+=`<div class="rudder-anchor" style="left:${a.x}%;top:${a.y}%">${artImg(`images/rudders/${artSlug(rudder.name)}.png`,`rudder-layer`,`${rudder.name} rudder`)}</div>`;}
+ html+=`<div class="art-guide-fallback"><b>${type.name}</b><span>${masts.length} mast${masts.length===1?'':'s'} · ${rudder?.name||'No'} rudder</span></div></div>`;
+ return html;
+}
+function componentArt(kind,name,label){
+ const src=`images/${kind}/${artSlug(name)}.png`;
+ return `<div class="component-art">${artImg(src,"component-img",label)}<div class="component-fallback"><b>${label}</b><span>${src}</span></div></div>`;
+}
+
 function spent(){
  return (B.type?.price||0)+(B.hull?.cost||0)+(B.trait?.cost||0)+(B.extra?.cost||0)+
  B.masts.reduce((s,x)=>s+x.cost,0)+(B.rudder?.cost||0);
@@ -124,7 +157,7 @@ function render(){
   +nav(!!B.type);
  }else if(step===3){
   s.innerHTML=`<h2>Choose Hull</h2><p class="muted">Select the hull construction for your vessel.</p>`+
-  choiceCards(SHIP_DATA.hulls,B.hull,"setHull",x=>`<p class="muted">HP ${x.hp} · AC ${x.ac} · Speed ${x.speed} · Space ${x.slots}</p>`)
+  choiceCards(SHIP_DATA.hulls,B.hull,"setHull",x=>`<div class="choice-preview">${componentArt("hulls",B.type?.name||"generic",(B.type?.name||"Ship")+" hull")}</div><p class="muted">HP ${x.hp} · AC ${x.ac} · Speed ${x.speed} · Space ${x.slots}</p>`)
   +nav(!!B.hull);
  }else if(step===4){
   s.innerHTML=`<h2>Hull Design & Construction Upgrades</h2><p class="muted">Lean, Sturdy and Long must be chosen during construction.</p>
@@ -138,11 +171,11 @@ function render(){
   <div class="notice"><b>Installed:</b> ${B.masts.length}/${max} · ${B.masts.map((m,i)=>`${m.name} <button onclick="removeMast(${i})">×</button>`).join(" · ")||"None"}</div>
   <div class="grid">${SHIP_DATA.masts.map((m,i)=>{
    const dis=B.masts.length>=max||!affordable(m.cost)||usedSpace()+m.space>capacity();
-   return `<div class="choice ${dis?"disabled":""}" onclick="${dis?"":"addMast("+i+")"}"><h3>${m.name}</h3><div class="price">${gp(m.cost)}</div>
+   return `<div class="choice ${dis?"disabled":""}" onclick="${dis?"":"addMast("+i+")"}"><div class="choice-preview">${componentArt("masts",m.name,m.name+" mast")}</div><h3>${m.name}</h3><div class="price">${gp(m.cost)}</div>
    <p class="muted">HP ${m.hp} · AC ${m.ac} · Speed ${m.speed>=0?"+":""}${m.speed} · Space ${m.space}</p></div>`}).join("")}</div>${nav(valid)}`;
  }else if(step===6){
   s.innerHTML=`<h2>Choose Rudder / Helm</h2>`+
-  choiceCards(SHIP_DATA.rudders,B.rudder,"setRudder",x=>`<p class="muted">HP ${x.hp} · AC ${x.ac} · Handling ${x.handling>=0?"+":""}${x.handling} · Space ${x.space}</p>`)
+  choiceCards(SHIP_DATA.rudders,B.rudder,"setRudder",x=>`<div class="choice-preview">${componentArt("rudders",x.name,x.name+" rudder")}</div><p class="muted">HP ${x.hp} · AC ${x.ac} · Handling ${x.handling>=0?"+":""}${x.handling} · Space ${x.space}</p>`)
   +nav(!!B.rudder);
  }else{
   const mastCost=B.masts.reduce((s,x)=>s+x.cost,0);
@@ -155,7 +188,7 @@ function render(){
    <div class="line"><span>Masts</span><b>${B.masts.length} · ${gp(mastCost)}</b></div>
    <div class="line"><span>Rudder</span><b>${B.rudder?.name||"—"} · ${gp(B.rudder?.cost||0)}</b></div>
   </div><div>
-   <div class="art"><div>SHIP ART<br><span class="muted">Will use the same modular art library as Generator</span></div></div>
+   <div class="art"><div id="builderComposite" style="width:100%">${B.type?compositeShipArt(B.type,B.masts,B.rudder,true):""}</div></div>
    <p><b>Spent:</b> ${gp(spent())}<br><b>Remaining:</b> ${gp(remaining())}<br><b>Structural Space:</b> ${usedSpace()} / ${capacity()}</p>
   </div></div>
   <div class="notice">Review the vessel order before printing or continuing outfitting.</div>

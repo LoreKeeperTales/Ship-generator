@@ -58,15 +58,29 @@ section{margin-top:14px}
 .badge{display:inline-block;border:1px solid var(--gold);border-radius:20px;padding:4px 9px;color:var(--gold2);font:700 12px Arial,sans-serif}
 @media(max-width:950px){.hero,.grid2,.component{grid-template-columns:1fr}.dashboard{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){main{padding:10px}.dashboard,.grid3,.slotgrid{grid-template-columns:1fr}.art{min-height:220px}}
+
+/* Modular ship artwork: hull + mast slot layers + rudder layer */
+.ship-composite{position:relative;width:100%;aspect-ratio:16/9;min-height:260px;overflow:hidden}
+.ship-composite.compact{min-height:180px}
+.ship-composite .layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.mast-anchor{position:absolute;bottom:43%;width:20%;height:52%;transform:translateX(-50%);display:flex;align-items:flex-end;justify-content:center;z-index:3;pointer-events:none}
+.mast-layer{display:block;max-width:100%;max-height:100%;object-fit:contain}
+.rudder-anchor{position:absolute;width:14%;height:30%;transform:translate(-10%,-10%);z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.rudder-layer{display:block;max-width:100%;max-height:100%;object-fit:contain}
+.art-missing{display:none!important}
+.art-guide-fallback{position:absolute;left:8px;bottom:8px;z-index:0;background:#071522cc;border:1px dashed var(--gold);border-radius:7px;padding:6px 8px;font:11px Arial,sans-serif;color:var(--muted);pointer-events:none}
+.art-guide-fallback b,.art-guide-fallback span{display:block}
+.component-art{position:relative;min-height:130px;border:2px dashed var(--gold);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.component-img{position:relative;z-index:2;display:block;max-width:100%;max-height:180px;object-fit:contain}
+.component-fallback{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);font:11px Arial,sans-serif;padding:8px}
+.component-fallback b{color:var(--gold2);font-size:14px;margin-bottom:4px}
+@media(max-width:600px){.ship-composite{min-height:190px}.mast-anchor{width:24%}.rudder-anchor{width:18%}}
 </style>
 </head>
 <body>
-<main><div style="margin-bottom:12px"><a href="ellond_ships/index.html" style="color:#e0bd70">← Ellond Ships Start</a></div>
+<main><div style="margin-bottom:12px"><a href="index.html" style="color:#e0bd70">← Ellond Ships Start</a></div>
 <section class="hero">
- <div class="art" id="shipArt">
-   <img id="shipImage" alt="Generated ship">
-   <div id="shipArtFallback"><h2>SHIP ART</h2><div class="muted" id="artPath">images/ships/...</div><p>Your ship drawing will appear here.</p></div>
- </div>
+ <div class="art" id="shipArt"><div id="shipComposite" style="width:100%"></div></div>
  <div class="panel">
    <div class="muted">GENERATED VESSEL</div>
    <h1 id="shipName">—</h1>
@@ -117,16 +131,16 @@ section{margin-top:14px}
 
 <section class="panel">
  <div class="topline"><div><h2>Hull</h2><div id="hullTitle" class="muted"></div></div><button data-reroll="hull">Reroll Hull</button></div>
- <div class="component"><div class="art small"><div>HULL ART<br><span class="muted">images/hulls/</span></div></div><div id="hullInfo" class="grid3"></div></div>
+ <div class="component"><div id="hullArtDetail"></div><div id="hullInfo" class="grid3"></div></div>
 </section>
 
 <section class="panel">
  <div class="topline"><div><h2>Masts & Rigging</h2><div id="mastTitle" class="muted"></div></div><button data-reroll="masts">Reroll Masts</button></div>
- <div class="component"><div class="art small"><div>MAST ART<br><span class="muted">images/masts/</span></div></div><div id="mastCards" class="grid3"></div></div>
+ <div class="component"><div id="mastArtDetail"></div><div id="mastCards" class="grid3"></div></div>
 </section>
 
 <section class="grid2">
- <div class="panel"><div class="topline"><h2>Rudder / Helm</h2><button data-reroll="rudder">Reroll</button></div><div id="rudderInfo"></div></div>
+ <div class="panel"><div class="topline"><h2>Rudder / Helm</h2><button data-reroll="rudder">Reroll</button></div><div id="rudderArtDetail" style="margin-bottom:10px"></div><div id="rudderInfo"></div></div>
  <div class="panel"><div class="topline"><h2>Crew</h2><button data-reroll="crew">Reroll</button></div><div id="crewInfo"></div></div>
 </section>
 
@@ -402,6 +416,39 @@ function makeCargo(cargoSlots){
   tons-=amount;
  }
  return cargo;
+}
+
+function artSlug(v){return String(v||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+const SHIP_ART_LAYOUT={
+ Sloop:{masts:[48],rudder:{x:91,y:55}},
+ Clipper:{masts:[30,50,70],rudder:{x:91,y:55}},
+ Schooner:{masts:[38,59,76],rudder:{x:91,y:55}},
+ Brigantine:{masts:[40,66],rudder:{x:91,y:55}},
+ Brig:{masts:[40,66],rudder:{x:91,y:55}},
+ Corvette:{masts:[37,59,76],rudder:{x:91,y:55}},
+ Frigate:{masts:[30,50,70],rudder:{x:91,y:55}},
+ Galley:{masts:[48,68],rudder:{x:91,y:55}}
+};
+function artImg(src,cls,alt,fallbackSrc=""){
+ const fb=fallbackSrc?` onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='${fallbackSrc}'}else{this.classList.add('art-missing')}"`:` onerror="this.classList.add('art-missing')"`;
+ return `<img class="${cls}" src="${src}" alt="${alt}"${fb}>`;
+}
+function compositeShipArt(type,masts,rudder,compact=false){
+ const layout=SHIP_ART_LAYOUT[type.name]||{masts:[35,55,75],rudder:{x:91,y:55}};
+ const hullSlug=artSlug(type.name);
+ let html=`<div class="ship-composite ${compact?'compact':''}">`+
+  artImg(`images/hulls/${hullSlug}.png`,`layer hull-layer`,`${type.name} hull`,`images/ships/${hullSlug}.png`);
+ masts.forEach((m,i)=>{
+   const x=layout.masts[i]??layout.masts[layout.masts.length-1]??50;
+   html+=`<div class="mast-anchor" style="left:${x}%">${artImg(`images/masts/${artSlug(m.name)}.png`,`mast-layer`,`${m.name} mast`)}</div>`;
+ });
+ if(rudder){const a=layout.rudder||{x:91,y:55};html+=`<div class="rudder-anchor" style="left:${a.x}%;top:${a.y}%">${artImg(`images/rudders/${artSlug(rudder.name)}.png`,`rudder-layer`,`${rudder.name} rudder`)}</div>`;}
+ html+=`<div class="art-guide-fallback"><b>${type.name}</b><span>${masts.length} mast${masts.length===1?'':'s'} · ${rudder?.name||'No'} rudder</span></div></div>`;
+ return html;
+}
+function componentArt(kind,name,label){
+ const src=`images/${kind}/${artSlug(name)}.png`;
+ return `<div class="component-art">${artImg(src,"component-img",label)}<div class="component-fallback"><b>${label}</b><span>${src}</span></div></div>`;
 }
 
 function makeShip(){
@@ -785,12 +832,7 @@ function render(){
  document.getElementById("conditionBadge").textContent=ship.startingCondition;
  document.getElementById("conditionTitle").textContent=ship.startingCondition;
  document.getElementById("conditionDescription").textContent=ship.damageDescription;
- const art="images/ships/"+ship.type.name.toLowerCase().replaceAll(" ","-")+".png";
- document.getElementById("artPath").textContent=art;
- const img=document.getElementById("shipImage"),fallback=document.getElementById("shipArtFallback");
- img.onload=()=>{img.style.display="block";fallback.style.display="none"};
- img.onerror=()=>{img.style.display="none";fallback.style.display="block"};
- img.src=art;
+ document.getElementById("shipComposite").innerHTML=compositeShipArt(ship.type,ship.masts,ship.rudder);
 
  let d=tracker("total","TOTAL HP",totalHP(),totalHP("base"));
  d+=tracker("hull","HULL HP",ship.current.hull,ship.base.hull);
@@ -823,16 +865,19 @@ function render(){
   renderCrewCombat();
  document.getElementById("slotList").innerHTML=Object.entries(ship.slots).map(([k,v])=>`<div class="stat slot"><span class="muted">${k}</span><br><b>${v}</b></div>`).join("");
 
+ document.getElementById("hullArtDetail").innerHTML=componentArt("hulls",ship.type.name,ship.type.name+" hull");
  document.getElementById("hullTitle").textContent=`${ship.hull.name} · ${ship.hull.trait}${ship.hull.extra!=="None"?" · "+ship.hull.extra:""}`;
  document.getElementById("hullInfo").innerHTML=[
   ["Current / Base HP",`${ship.current.hull} / ${ship.base.hull}`],
   ["AC",ship.hull.ac],["Speed",fmt(ship.hull.speed)+" mph"],["Hull Space",ship.hull.slots],["Hull Cost",gp(ship.hull.cost)],["Ship Type Price",gp(ship.type.price)]
  ].map(x=>`<div class="stat"><span class="muted">${x[0]}</span><br><b>${x[1]}</b></div>`).join("");
 
+ document.getElementById("mastArtDetail").innerHTML=`<div class="grid3">${ship.masts.map((m,i)=>componentArt("masts",m.name,(["Foremast","Mainmast","Mizzenmast"][i]||"Mast "+(i+1))+" — "+m.name)).join("")}</div>`;
  document.getElementById("mastTitle").textContent=`${ship.masts.length} mast${ship.masts.length===1?"":"s"}`;
  document.getElementById("mastCards").innerHTML=ship.masts.map((m,i)=>`<div class="stat"><b>${["Foremast","Mainmast","Mizzenmast"][i]||"Mast "+(i+1)}</b><br>${m.name}<br>HP ${ship.current.masts[i]} / ${ship.base.masts[i]}<br>AC ${m.ac}<br>Speed ${m.speed>=0?"+":""}${m.speed}<br>Space ${m.space}<br>${gp(m.cost)}</div>`).join("");
 
  const r=ship.rudder;
+ document.getElementById("rudderArtDetail").innerHTML=componentArt("rudders",r.name,r.name+" rudder");
  document.getElementById("rudderInfo").innerHTML=`<h3>${r.name}</h3><p>HP <b>${ship.current.rudder} / ${ship.base.rudder}</b> · AC <b>${r.ac}</b></p><p>Handling <b>${r.handling>=0?"+":""}${r.handling}</b> · Space <b>${r.space}</b> · Cost <b>${gp(r.cost)}</b></p>`;
  document.getElementById("crewInfo").innerHTML=`<h3>${ship.base.crew} intended sailors</h3><p>Current able crew: <b>${ship.current.crew} / ${ship.base.crew}</b></p><p class="muted">Crew HP represents sailors still able to operate the vessel.</p>`;
 
